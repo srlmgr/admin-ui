@@ -1,57 +1,87 @@
-import { Alert, Button, Card, Typography } from 'antd'
-import { LoginOutlined } from '@ant-design/icons'
-import { useSearchParams } from 'react-router-dom'
+import { RootState } from "@/store";
+import { clearUser, setError, setLoading } from "@/store/slices/authSlice";
+import { LoginOutlined } from "@ant-design/icons";
+import { Alert, Button, Card, Space, Typography } from "antd";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { Navigate } from "react-router-dom";
 
-const { Title } = Typography
-
-const ERROR_MESSAGES: Record<string, string> = {
-  auth_failed: 'Authentication failed. Please try again.',
-  access_denied: 'Access was denied. Please contact your administrator.',
-}
+const { Title, Paragraph } = Typography;
 
 export function LoginPage() {
-  const [searchParams] = useSearchParams()
-  const errorKey = searchParams.get('error')
-  const errorMessage = errorKey ? (ERROR_MESSAGES[errorKey] ?? 'An error occurred. Please try again.') : null
+	const dispatch = useDispatch();
+	const { isLoading, error, user } = useSelector(
+		(state: RootState) => state.auth,
+	);
 
-  const handleLogin = () => {
-    const redirectUri = `${window.location.origin}/callback`
-    window.location.href = `/api/auth/login?redirect_uri=${encodeURIComponent(redirectUri)}`
-  }
+	// Clear any lingering error on component mount
+	useEffect(() => {
+		dispatch(clearUser());
+	}, [dispatch]);
 
-  return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh',
-        background: '#f0f2f5',
-      }}
-    >
-      <Card style={{ width: 400, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <Title level={2}>SRL Manager</Title>
-          <Typography.Text type="secondary">Administration Portal</Typography.Text>
-        </div>
-        {errorMessage && (
-          <Alert
-            type="error"
-            message={errorMessage}
-            showIcon
-            style={{ marginBottom: 16 }}
-          />
-        )}
-        <Button
-          type="primary"
-          size="large"
-          icon={<LoginOutlined />}
-          onClick={handleLogin}
-          block
-        >
-          Sign In
-        </Button>
-      </Card>
-    </div>
-  )
+	const handleLogin = async () => {
+		dispatch(setLoading(true));
+		dispatch(setError(""));
+
+		// Provide the frontend callback URL so backend can return here on success.
+		const callbackUrl = `${window.location.origin}/callback`;
+		const params = new URLSearchParams({
+			callbackUrl,
+			callback_url: callbackUrl,
+		});
+
+		// Use full-page navigation so backend OAuth redirects are handled by the browser.
+		window.location.assign(`/api/login?${params.toString()}`);
+	};
+
+	// Safety check: if somehow user is logged in, redirect
+	if (user) {
+		return <Navigate to="/users" replace />;
+	}
+
+	return (
+		<div
+			style={{
+				display: "flex",
+				justifyContent: "center",
+				alignItems: "center",
+				minHeight: "100vh",
+				background: "#f0f2f5",
+			}}
+		>
+			<Card
+				style={{
+					width: "100%",
+					maxWidth: 400,
+					boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+				}}
+			>
+				<Space
+					orientation="vertical"
+					style={{ width: "100%" }}
+					size="large"
+				>
+					<div style={{ textAlign: "center" }}>
+						<Title level={2}>Admin Dashboard</Title>
+						<Paragraph type="secondary">
+							Welcome! Please log in to continue.
+						</Paragraph>
+					</div>
+
+					{error && <Alert type="error" title={error} showIcon />}
+
+					<Button
+						type="primary"
+						size="large"
+						icon={<LoginOutlined />}
+						onClick={handleLogin}
+						loading={isLoading}
+						block
+					>
+						Sign In
+					</Button>
+				</Space>
+			</Card>
+		</div>
+	);
 }
