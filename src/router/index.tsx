@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AppLayout } from '../components/Layout/AppLayout'
 import { LoginPage } from '../pages/Login/LoginPage'
+import { CallbackPage } from '../pages/Callback/CallbackPage'
 import { UsersPage } from '../pages/Users/UsersPage'
 import { DriversPage } from '../pages/Drivers/DriversPage'
 import { SimulationPage } from '../pages/Simulation/SimulationPage'
@@ -12,6 +13,10 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <LoginPage />,
+  },
+  {
+    path: '/callback',
+    element: <CallbackPage />,
   },
   {
     path: '/',

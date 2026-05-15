@@ -1,38 +1,22 @@
-import { useState } from 'react'
-import { Form, Input, Button, Card, Typography, message } from 'antd'
-import { UserOutlined, LockOutlined } from '@ant-design/icons'
-import { useNavigate } from 'react-router-dom'
+import { Alert, Button, Card, Typography } from 'antd'
+import { LoginOutlined } from '@ant-design/icons'
+import { useSearchParams } from 'react-router-dom'
 
 const { Title } = Typography
 
-interface LoginFormValues {
-  username: string
-  password: string
+const ERROR_MESSAGES: Record<string, string> = {
+  auth_failed: 'Authentication failed. Please try again.',
+  access_denied: 'Access was denied. Please contact your administrator.',
 }
 
 export function LoginPage() {
-  const [loading, setLoading] = useState(false)
-  const navigate = useNavigate()
-  const [messageApi, contextHolder] = message.useMessage()
+  const [searchParams] = useSearchParams()
+  const errorKey = searchParams.get('error')
+  const errorMessage = errorKey ? (ERROR_MESSAGES[errorKey] ?? 'An error occurred. Please try again.') : null
 
-  const onFinish = async (values: LoginFormValues) => {
-    setLoading(true)
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(values),
-      })
-      if (response.ok) {
-        navigate('/')
-      } else {
-        await messageApi.error('Invalid credentials')
-      }
-    } catch {
-      await messageApi.error('Login failed. Please try again.')
-    } finally {
-      setLoading(false)
-    }
+  const handleLogin = () => {
+    const redirectUri = `${window.location.origin}/callback`
+    window.location.href = `/api/auth/login?redirect_uri=${encodeURIComponent(redirectUri)}`
   }
 
   return (
@@ -45,50 +29,28 @@ export function LoginPage() {
         background: '#f0f2f5',
       }}
     >
-      {contextHolder}
       <Card style={{ width: 400, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <Title level={2}>SRL Manager</Title>
           <Typography.Text type="secondary">Administration Portal</Typography.Text>
         </div>
-        <Form
-          name="login"
-          onFinish={onFinish}
-          autoComplete="off"
-          layout="vertical"
+        {errorMessage && (
+          <Alert
+            type="error"
+            message={errorMessage}
+            showIcon
+            style={{ marginBottom: 16 }}
+          />
+        )}
+        <Button
+          type="primary"
+          size="large"
+          icon={<LoginOutlined />}
+          onClick={handleLogin}
+          block
         >
-          <Form.Item
-            name="username"
-            rules={[{ required: true, message: 'Please enter your username' }]}
-          >
-            <Input
-              prefix={<UserOutlined />}
-              placeholder="Username"
-              size="large"
-            />
-          </Form.Item>
-          <Form.Item
-            name="password"
-            rules={[{ required: true, message: 'Please enter your password' }]}
-          >
-            <Input.Password
-              prefix={<LockOutlined />}
-              placeholder="Password"
-              size="large"
-            />
-          </Form.Item>
-          <Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              size="large"
-              loading={loading}
-              block
-            >
-              Sign In
-            </Button>
-          </Form.Item>
-        </Form>
+          Sign In
+        </Button>
       </Card>
     </div>
   )
