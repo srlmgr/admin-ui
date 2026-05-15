@@ -1,62 +1,83 @@
-import { useEffect, useRef } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Spin, Result, Typography } from 'antd'
+import { setError, setLoading, setUser } from "@/store/slices/authSlice";
+import { Result, Spin, Typography } from "antd";
+import { useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
 export function CallbackPage() {
-  const [searchParams] = useSearchParams()
-  const navigate = useNavigate()
-  const handled = useRef(false)
+	const dispatch = useDispatch();
+	const navigate = useNavigate();
 
-  useEffect(() => {
-    if (handled.current) return
-    handled.current = true
+	useEffect(() => {
+		const handleCallback = async () => {
+			try {
+				dispatch(setLoading(true));
 
-    const code = searchParams.get('code')
-    const state = searchParams.get('state')
-    const error = searchParams.get('error')
+				// Backend has already finished login and redirected here.
+				// Read current authenticated user from the backend session.
+				const response = await fetch("/api/currentuser", {
+					method: "GET",
+					credentials: "include",
+				});
 
-    if (error) {
-      navigate(`/login?error=${encodeURIComponent(error)}`, { replace: true })
-      return
-    }
+				if (!response.ok) {
+					throw new Error("Unable to load authenticated user");
+				}
 
-    if (!code) {
-      navigate('/login', { replace: true })
-      return
-    }
+				const userData = (await response.json()) as {
+					id: string;
+					name: string;
+					firstName: string;
+					lastName: string;
+				};
 
-    const params = new URLSearchParams({ code })
-    if (state) params.set('state', state)
+				// Store user in Redux
+				dispatch(
+					setUser({
+						id: userData.id,
+						name: userData.name,
+						firstName: userData.firstName,
+						lastName: userData.lastName,
+					}),
+				);
 
-    fetch(`/api/auth/callback?${params.toString()}`, { credentials: 'include' })
-      .then((res) => {
-        if (res.ok) {
-          navigate('/', { replace: true })
-        } else {
-          navigate('/login?error=auth_failed', { replace: true })
-        }
-      })
-      .catch(() => {
-        navigate('/login?error=auth_failed', { replace: true })
-      })
-  }, [navigate, searchParams])
+				// Redirect to app landing page
+				navigate("/", { replace: true });
+			} catch (err) {
+				const message =
+					err instanceof Error
+						? err.message
+						: "Authentication failed";
+				dispatch(setError(message));
+				navigate("/login", { replace: true });
+			} finally {
+				dispatch(setLoading(false));
+			}
+		};
 
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh',
-        gap: 16,
-      }}
-    >
-      <Result
-        icon={<Spin size="large" />}
-        title="Signing you in…"
-        subTitle={<Typography.Text type="secondary">Please wait while we complete the login.</Typography.Text>}
-      />
-    </div>
-  )
+		handleCallback();
+	}, [dispatch, navigate]);
+
+	return (
+		<div
+			style={{
+				display: "flex",
+				flexDirection: "column",
+				justifyContent: "center",
+				alignItems: "center",
+				minHeight: "100vh",
+				gap: 16,
+			}}
+		>
+			<Result
+				icon={<Spin size="large" />}
+				title="Signing you in…"
+				subTitle={
+					<Typography.Text type="secondary">
+						Please wait while we complete the login.
+					</Typography.Text>
+				}
+			/>
+		</div>
+	);
 }
