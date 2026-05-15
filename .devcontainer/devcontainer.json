@@ -1,0 +1,56 @@
+// For format details, see https://aka.ms/vscode-remote/devcontainer.json or this file's README at:
+// https://github.com/microsoft/vscode-dev-containers/tree/v0.112.0/containers/typescript-node-12
+{
+  "name": "admin-ui",
+  "image": "mcr.microsoft.com/vscode/devcontainers/typescript-node:24",
+
+  // Set *default* container specific settings.json values on container create.
+  "customizations": {
+    "vscode": {
+      "settings": {
+        // "terminal.integrated.shell.linux": "/bin/bash",
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "prettier.printWidth": 120,
+        "editor.tabSize": 2,
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "[typescript]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode",
+          "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+          }
+        },
+        "[typescriptreact]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode",
+          "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+          }
+        }
+      },
+      // Add the IDs of extensions you want installed when the container is created.
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "eamodio.gitlens",
+        "esbenp.prettier-vscode",
+        "github.vscode-pull-request-github",
+        "sleistner.vscode-fileutils",
+        "patbenatar.advanced-new-file",
+        "formulahendry.auto-rename-tag",
+        "vitest.explorer"
+      ]
+    }
+  },
+
+  "containerEnv": {
+    "TZ": "Europe/Berlin"
+  },
+
+  "features": {},
+  // Use 'postCreateCommand' to run commands after the container is created.
+  "postCreateCommand": "./devinit.sh",
+
+  // Uncomment to connect as a non-root user. See https://aka.ms/vscode-remote/containers/non-root.
+  "remoteUser": "node",
+  // "runArgs": ["--add-host=host.docker.internal:host-gateway"]
+  "runArgs": ["--network=host"]
+}
