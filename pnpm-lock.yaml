@@ -11,6 +11,9 @@ importers:
       '@ant-design/icons':
         specifier: ^6.2.3
         version: 6.2.3(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+      '@buf/srlmgr_api.bufbuild_es':
+        specifier: 2.12.0-20260501090437-30be13fba266.1
+        version: 2.12.0-20260501090437-30be13fba266.1(@bufbuild/protobuf@2.12.0)
       '@bufbuild/protobuf':
         specifier: ^2.12.0
         version: 2.12.0
@@ -220,6 +223,11 @@ packages:
   '@bramus/specificity@2.4.2':
     resolution: {integrity: sha512-ctxtJ/eA+t+6q2++vj5j7FYX3nRu311q1wfYH3xjlLOsczhlhxAg2FWNUXhpGvAw3BWo1xBcvOV6/YLc2r5FJw==}
     hasBin: true
+
+  '@buf/srlmgr_api.bufbuild_es@2.12.0-20260501090437-30be13fba266.1':
+    resolution: {tarball: https://buf.build/gen/npm/v1/@buf/srlmgr_api.bufbuild_es/-/srlmgr_api.bufbuild_es-2.12.0-20260501090437-30be13fba266.1.tgz}
+    peerDependencies:
+      '@bufbuild/protobuf': ^2.12.0
 
   '@bufbuild/protobuf@2.12.0':
     resolution: {integrity: sha512-B/XlCaFIP8LOwzo+bz5uFzATYokcwCKQcghqnlfwSmM5eX/qTkvDBnDPs+gXtX/RyjxJ4DRikECcPJbyALA8FA==}
@@ -1968,6 +1976,10 @@ snapshots:
   '@bramus/specificity@2.4.2':
     dependencies:
       css-tree: 3.2.1
+
+  '@buf/srlmgr_api.bufbuild_es@2.12.0-20260501090437-30be13fba266.1(@bufbuild/protobuf@2.12.0)':
+    dependencies:
+      '@bufbuild/protobuf': 2.12.0
 
   '@bufbuild/protobuf@2.12.0': {}
 
