@@ -33,7 +33,9 @@ describe("LoginPage", () => {
 			</Provider>,
 		);
 
-		expect(screen.getByText("Admin Dashboard")).toBeDefined();
+		expect(
+			screen.getByText("SimRacingLeague Manager Administration"),
+		).toBeDefined();
 		expect(
 			screen.getByText("Welcome! Please log in to continue."),
 		).toBeDefined();
