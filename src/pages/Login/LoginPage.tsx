@@ -62,7 +62,9 @@ export function LoginPage() {
 					size="large"
 				>
 					<div style={{ textAlign: "center" }}>
-						<Title level={2}>Admin Dashboard</Title>
+						<Title level={2}>
+							SimRacingLeague Manager Administration
+						</Title>
 						<Paragraph type="secondary">
 							Welcome! Please log in to continue.
 						</Paragraph>
