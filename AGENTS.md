@@ -1,131 +1,78 @@
 # AI Agent Guidelines for admin-ui
 
-This document helps AI agents understand the project structure, conventions, and workflows to be immediately productive.
+Use this file as the quick-start for coding agents. Keep it minimal and link to canonical docs.
 
-## Project Overview
+## First 60 Seconds
 
-**admin-ui** is a React 19 + TypeScript frontend administration dashboard using:
-- **Build**: Vite with pnpm package manager
-- **State Management**: Redux (react-redux) for user authentication and app state
-- **Routing**: React Router v7 with protected route pattern (login → callback → authenticated pages)
-- **UI Framework**: Ant Design (antd) components
-- **API Communication**: ConnectRPC (@connectrpc/connect-web) for type-safe gRPC-web calls
-- **Testing**: Vitest with watch mode support
-- **Code Quality**: ESLint + TypeScript
-- **Backend**: Proxied via Vite to `http://localhost:8080` at `/api`
+1. Install and run checks:
 
-## Essential Commands
-
-### Development
 ```bash
-pnpm dev              # Start dev server (localhost:5173 with /api proxy)
-pnpm build            # TypeScript check + Vite build to dist/
-pnpm lint             # ESLint check all files
+pnpm install
+pnpm lint
+pnpm test:no-watch
 ```
 
-### Testing
+2. Start the app when UI behavior matters:
+
 ```bash
-pnpm test             # Vitest in watch mode
-pnpm test:no-watch    # Vitest single run (CI mode)
+pnpm dev
 ```
 
-### Package Management
-- **Install**: `pnpm install` (uses pnpm-lock.yaml)
-- **Add**: `pnpm add <package>` or `pnpm add -D <package>` (dev)
-- Use pnpm, not npm or yarn
+3. If API-backed screens fail, verify backend is running on `localhost:8080` (Vite proxies `/api` there).
 
-## Project Structure
+## Key Project Facts
 
-```
-src/
-├── App.tsx                 # Root component with RouterProvider
-├── main.tsx               # Entry point
-├── api/
-│   └── client.ts          # ConnectRPC transport setup (target: /api)
-├── components/
-│   └── Layout/
-│       └── AppLayout.tsx   # Protected layout wrapper (logged-in users only)
-├── pages/
-│   ├── Login/LoginPage    # Public login page (no auth required)
-│   ├── Callback/          # OAuth callback handler
-│   ├── Users/             # Admin pages (protected)
-│   ├── Drivers/
-│   ├── Simulation/
-│   ├── Series/
-│   ├── Tracks/
-│   └── Cars/
-└── router/
-    └── index.tsx          # Route definitions and layout
-```
+- Stack: React 19 + TypeScript + Vite + Ant Design + Redux Toolkit.
+- Routing: React Router with public routes (`/login`, `/callback`) and protected routes under `AppLayout`.
+- API: ConnectRPC gRPC-web clients via generated protobuf package `@buf/srlmgr_api.bufbuild_es`.
+- Package manager: `pnpm` only.
 
-## Architecture Patterns
+## Source of Truth
 
-### Authentication & Routing
-- **Public routes**: `/login`, `/callback` (no auth required)
-- **Protected routes**: `/` layout children (requires login)
-- **Redux store**: Stores user authentication state (to be implemented per GitHub issue #2)
-- **Login flow**: POST `/api/login` → OAuth redirect → `/callback` → Redux store user → navigate to `/users`
-- **Logout flow**: POST `/api/logout` → clear Redux store → navigate to `/login`
+- Runtime transport format and env/config precedence: [README.md](README.md)
+- Authentication flow details: [docs/AUTHENTICATION.md](docs/AUTHENTICATION.md)
 
-### Components
-- **AppLayout** wraps all protected routes and provides user context (name + logout button in header)
-- Pages are organized by domain (Users, Drivers, Cars, etc.)
-- Ant Design components used throughout (Button, Table, Form, etc.)
+Do not duplicate those docs in PR descriptions or new instructions files; link to them.
 
-### API Client
-- ConnectRPC transport pre-configured to `/api` baseUrl
-- Import: `import { createClient } from '@/api/client'`
-- Type-safe RPC calls with protobuf messages
-- Backend handles CORS and gRPC-web
+## High-Value File Map
 
-### State Management
-- **Redux with react-redux** for user state (authentication)
-- User data should include at minimum: name/username for display in header
-- Store structure TBD but should follow Redux best practices
+- App entry and router: [src/main.tsx](src/main.tsx), [src/App.tsx](src/App.tsx), [src/router/index.tsx](src/router/index.tsx)
+- Protected layout and navigation: [src/components/Layout/AppLayout.tsx](src/components/Layout/AppLayout.tsx)
+- Auth state and hook: [src/store/slices/authSlice.ts](src/store/slices/authSlice.ts), [src/store/index.ts](src/store/index.ts), [src/hooks/useAuth.ts](src/hooks/useAuth.ts)
+- API transport and clients: [src/api/client.ts](src/api/client.ts), [src/api/grpcClients.ts](src/api/grpcClients.ts)
+- Domain API wrappers (examples): [src/api/drivers.ts](src/api/drivers.ts), [src/api/simulations.ts](src/api/simulations.ts)
+- Config loading behavior: [src/config.ts](src/config.ts), [public/config.json](public/config.json)
 
-## Common Development Patterns
+## Implementation Conventions
 
-### Creating a New Page
-1. Create file: `src/pages/{Domain}/{DomainPage}.tsx`
-2. Add route to `src/router/index.tsx` under AppLayout children
-3. Import and use Ant Design components
-4. Make API calls using ConnectRPC client
+- Keep domain pages under `src/pages/<Domain>/<Domain>Page.tsx`.
+- Add route entries in [src/router/index.tsx](src/router/index.tsx).
+- Prefer typed API wrapper functions in `src/api/*` instead of calling gRPC clients directly from page components.
+- Preserve import alias style (`@/...`) used by the codebase.
+- For auth-sensitive requests, ensure cookie/session behavior is preserved (`credentials: "include"` where required by existing flow).
 
-### Adding Redux State
-1. Create store setup with Redux Toolkit (suggested but not yet implemented)
-2. Add slices for user auth, domain data
-3. Use `useDispatch()` and `useSelector()` in components
+## Testing and Validation
 
-### API Calls
-```typescript
-import { createClient } from '@/api/client'
-import { YourService } from '@/api/gen/your_service.pb' // protobuf generated
+- Unit/component tests live in `__test__` folders near the feature.
+- Use React Testing Library + Vitest patterns shown in [src/pages/Login/**test**/LoginPage.spec.tsx](src/pages/Login/__test__/LoginPage.spec.tsx).
+- Before finishing a change, run:
 
-const client = createClient(YourService, transport)
-const response = await client.yourMethod({ ... })
+```bash
+pnpm lint
+pnpm test:no-watch
+pnpm build
 ```
 
-## Testing
-- Tests go in `__test__/` directories (see `src/pages/Users/__test__/dummy.spec.ts`)
-- Use Vitest syntax and React Testing Library for components
-- Run with `pnpm test` (watch) or `pnpm test:no-watch` (CI)
+## Common Pitfalls
 
-## Code Quality Standards
-- **TypeScript**: Strict mode enabled (tsconfig.json)
-- **ESLint**: Runs on all .ts/.tsx files
-- **No console warnings**: React Hooks and React Refresh plugins enforce best practices
-- **Prettier**: Not configured; ESLint handles formatting
+- Backend not running causes `/api` failures during local dev.
+- Runtime config differs by environment: dev uses Vite env vars; prod uses `public/config.json`.
+- Generated protobuf field names may differ from assumptions; verify types directly from imported package symbols.
 
-## Important Notes
-- **Backend requirement**: Backend must be running on `localhost:8080` for dev mode
-- **Environment variables**: Check if `.env` or `.env.local` files are needed (not currently in repo)
-- **Build output**: Production build goes to `dist/` directory
-- **Protocol Buffers**: Backend communicates via ConnectRPC (ensure .proto files are generated/available)
+## Typical Task Flow
 
-## When Starting on a GitHub Issue
-1. Read the issue fully to understand requirements
-2. Check if Redux store setup is needed (Issue #2)
-3. Identify which routes/pages are affected
-4. Run `pnpm dev` to start dev server and test locally
-5. Create feature branch and make incremental commits
-6. Test with `pnpm test` and `pnpm lint` before submitting PR
+1. Read issue and identify impacted route/page + API wrapper files.
+2. Implement smallest viable change in page + API wrapper + route/store updates if needed.
+3. Add/adjust tests near changed feature.
+4. Run lint, tests, and build.
+5. Summarize behavior changes and any backend contract assumptions in the PR.
