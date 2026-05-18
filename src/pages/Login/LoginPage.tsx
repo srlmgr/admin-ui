@@ -1,5 +1,5 @@
 import { RootState } from "@/store";
-import { clearUser, setError, setLoading } from "@/store/slices/authSlice";
+import { setError, setLoading } from "@/store/slices/authSlice";
 import { LoginOutlined } from "@ant-design/icons";
 import { Alert, Button, Card, Space, Typography } from "antd";
 import { useEffect } from "react";
@@ -16,7 +16,7 @@ export function LoginPage() {
 
 	// Clear any lingering error on component mount
 	useEffect(() => {
-		dispatch(clearUser());
+		dispatch(setError(""));
 	}, [dispatch]);
 
 	const handleLogin = async () => {
