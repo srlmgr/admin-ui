@@ -1,6 +1,7 @@
 import { RootState } from "@/store";
 import { clearUser } from "@/store/slices/authSlice";
 import {
+	CalendarOutlined,
 	CarOutlined,
 	EnvironmentOutlined,
 	ExperimentOutlined,
@@ -21,6 +22,7 @@ const menuItems = [
 	{ key: "drivers", icon: <TeamOutlined />, label: "Drivers" },
 	{ key: "simulation", icon: <ExperimentOutlined />, label: "Simulation" },
 	{ key: "series", icon: <TrophyOutlined />, label: "Series" },
+	{ key: "seasons", icon: <CalendarOutlined />, label: "Seasons" },
 	{ key: "tracks", icon: <EnvironmentOutlined />, label: "Tracks" },
 	{ key: "cars", icon: <CarOutlined />, label: "Cars" },
 ];
@@ -39,7 +41,7 @@ export function AppLayout() {
 		return <Navigate to="/login" replace />;
 	}
 
-	const selectedKey = location.pathname.replace("/", "") || "users";
+	const selectedKey = location.pathname.split("/")[1] || "users";
 
 	const handleLogout = async () => {
 		try {

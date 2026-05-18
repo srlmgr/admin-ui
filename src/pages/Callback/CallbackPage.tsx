@@ -1,3 +1,4 @@
+import { fetchCurrentUser } from "@/api/currentUser";
 import { setError, setLoading, setUser } from "@/store/slices/authSlice";
 import { Result, Spin, Typography } from "antd";
 import { useEffect } from "react";
@@ -12,34 +13,15 @@ export function CallbackPage() {
 		const handleCallback = async () => {
 			try {
 				dispatch(setLoading(true));
+				const { status, user } = await fetchCurrentUser();
 
-				// Backend has already finished login and redirected here.
-				// Read current authenticated user from the backend session.
-				const response = await fetch("/api/currentuser", {
-					method: "GET",
-					credentials: "include",
-				});
-
-				if (!response.ok) {
-					throw new Error("Unable to load authenticated user");
+				if (status !== 200 || !user) {
+					dispatch(setError("Unable to load authenticated user"));
+					navigate("/login", { replace: true });
+					return;
 				}
 
-				const userData = (await response.json()) as {
-					id: string;
-					name: string;
-					firstName: string;
-					lastName: string;
-				};
-
-				// Store user in Redux
-				dispatch(
-					setUser({
-						id: userData.id,
-						name: userData.name,
-						firstName: userData.firstName,
-						lastName: userData.lastName,
-					}),
-				);
+				dispatch(setUser(user));
 
 				// Redirect to app landing page
 				navigate("/", { replace: true });
