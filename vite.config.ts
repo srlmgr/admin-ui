@@ -21,6 +21,9 @@ export default defineConfig(({ mode }) => {
 				"/api": {
 					target: proxyTarget,
 					changeOrigin: true,
+					agent: new (require("http").Agent)({
+						keepAlive: true,
+					}),
 					rewrite: (path) => path.replace(/^\/api/, ""),
 				},
 			},

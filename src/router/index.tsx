@@ -9,6 +9,10 @@ import { SeasonManagePage } from "../pages/Seasons/ManagePage";
 import { SeasonsPage } from "../pages/Seasons/SeasonsPage";
 import { SeriesPage } from "../pages/Series/SeriesPage";
 import { SimulationPage } from "../pages/Simulation/SimulationPage";
+import { TrackEditPage } from "../pages/Tracks/EditPage";
+import { TrackLayoutEditPage } from "../pages/Tracks/LayoutEditPage";
+import { TrackLayoutsPage } from "../pages/Tracks/LayoutsPage";
+import { TrackManagePage } from "../pages/Tracks/ManagePage";
 import { TracksPage } from "../pages/Tracks/TracksPage";
 import { UsersPage } from "../pages/Users/UsersPage";
 
@@ -35,6 +39,18 @@ export const router = createBrowserRouter([
 			{ path: "seasons/:seasonId/edit", element: <SeasonEditPage /> },
 			{ path: "seasons/:seasonId/manage", element: <SeasonManagePage /> },
 			{ path: "tracks", element: <TracksPage /> },
+			{ path: "tracks/manage", element: <TrackManagePage /> },
+			{ path: "tracks/new", element: <TrackEditPage /> },
+			{ path: "tracks/:trackId/edit", element: <TrackEditPage /> },
+			{ path: "tracks/:trackId/layouts", element: <TrackLayoutsPage /> },
+			{
+				path: "tracks/:trackId/layouts/new",
+				element: <TrackLayoutEditPage />,
+			},
+			{
+				path: "tracks/:trackId/layouts/:layoutId/edit",
+				element: <TrackLayoutEditPage />,
+			},
 			{ path: "cars", element: <CarsPage /> },
 		],
 	},
