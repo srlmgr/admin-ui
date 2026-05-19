@@ -1,12 +1,6 @@
-import { Typography } from 'antd'
+import { Navigate } from "react-router-dom";
 
-const { Title } = Typography
-
+// Redirect to the manage page
 export function TracksPage() {
-  return (
-    <div>
-      <Title level={2}>Tracks</Title>
-      <p>Manage tracks.</p>
-    </div>
-  )
+	return <Navigate to="/tracks/manage" replace />;
 }

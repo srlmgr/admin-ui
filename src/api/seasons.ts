@@ -4,10 +4,10 @@ import {
 	getQueryClient,
 } from "@/api/grpcClients";
 import type {
-	Event,
 	PointSystem,
 	Season,
 } from "@buf/srlmgr_api.bufbuild_es/backend/common/v1/common_pb";
+import type { EventContainer } from "@buf/srlmgr_api.bufbuild_es/backend/query/v1/frontend_pb";
 import { create } from "@bufbuild/protobuf";
 import { TimestampSchema, type Timestamp } from "@bufbuild/protobuf/wkt";
 
@@ -105,9 +105,19 @@ export async function getSeason(seasonId: number): Promise<Season | undefined> {
 	return response.season;
 }
 
-export async function listSeasonEvents(seasonId: number): Promise<Event[]> {
-	const response = await getQueryClient().listEvents({ seasonId });
-	return response.items;
+export type SeasonEventsData = {
+	season?: Season;
+	events: EventContainer[];
+};
+
+export async function listSeasonEvents(
+	seasonId: number,
+): Promise<SeasonEventsData> {
+	const response = await getFrontendClient().listSeasonEvents({ seasonId });
+	return {
+		season: response.season,
+		events: response.events,
+	};
 }
 
 export async function createSeason(
