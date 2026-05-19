@@ -1,4 +1,5 @@
 import react from "@vitejs/plugin-react";
+import { Agent } from "http";
 import { loadEnv } from "vite";
 import { defineConfig } from "vitest/config";
 
@@ -21,7 +22,7 @@ export default defineConfig(({ mode }) => {
 				"/api": {
 					target: proxyTarget,
 					changeOrigin: true,
-					agent: new (require("http").Agent)({
+					agent: new Agent({
 						keepAlive: true,
 					}),
 					rewrite: (path) => path.replace(/^\/api/, ""),

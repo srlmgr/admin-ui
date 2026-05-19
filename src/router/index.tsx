@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 import { AppLayout } from "../components/Layout/AppLayout";
 import { CallbackPage } from "../pages/Callback/CallbackPage";
 import { CarsPage } from "../pages/Cars/CarsPage";
+import { CarManagePage } from "../pages/Cars/ManagePage";
 import { DriversPage } from "../pages/Drivers/DriversPage";
 import { LoginPage } from "../pages/Login/LoginPage";
 import { SeasonEditPage } from "../pages/Seasons/EditPage";
@@ -52,6 +53,7 @@ export const router = createBrowserRouter([
 				element: <TrackLayoutEditPage />,
 			},
 			{ path: "cars", element: <CarsPage /> },
+			{ path: "cars/manage", element: <CarManagePage /> },
 		],
 	},
 	{
