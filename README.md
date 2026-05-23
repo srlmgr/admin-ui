@@ -20,6 +20,7 @@ Set the following variable:
 
 - VITE_GRPC_USE_BINARY=false to use json
 - VITE_GRPC_USE_BINARY=true to use binary
+- VITE_CURRENT_USER_POLL_SECONDS=60 to refresh /currentuser every 60 seconds after successful login bootstrap
 
 Current development default in `.env.development` is json (`VITE_GRPC_USE_BINARY=false`).
 

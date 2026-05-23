@@ -4,10 +4,19 @@ import {
 	getQueryClient,
 } from "@/api/grpcClients";
 import type {
+	Event,
 	PointSystem,
 	Season,
+	Series,
 } from "@buf/srlmgr_api.bufbuild_es/backend/common/v1/common_pb";
-import type { EventContainer } from "@buf/srlmgr_api.bufbuild_es/backend/query/v1/frontend_pb";
+import {
+	EventProcessingState,
+	EventStatus,
+} from "@buf/srlmgr_api.bufbuild_es/backend/common/v1/common_pb";
+import type {
+	EventContainer,
+	TrackLayoutContainer,
+} from "@buf/srlmgr_api.bufbuild_es/backend/query/v1/frontend_pb";
 import { create } from "@bufbuild/protobuf";
 import { TimestampSchema, type Timestamp } from "@bufbuild/protobuf/wkt";
 
@@ -107,6 +116,7 @@ export async function getSeason(seasonId: number): Promise<Season | undefined> {
 
 export type SeasonEventsData = {
 	season?: Season;
+	series?: Series;
 	events: EventContainer[];
 };
 
@@ -116,8 +126,77 @@ export async function listSeasonEvents(
 	const response = await getFrontendClient().listSeasonEvents({ seasonId });
 	return {
 		season: response.season,
+		series: response.series,
 		events: response.events,
 	};
+}
+
+export async function listTrackLayoutsForSimulation(
+	simulationId: number,
+): Promise<TrackLayoutContainer[]> {
+	const response = await getFrontendClient().listTrackLayouts({
+		simulationId,
+	});
+	return response.items;
+}
+
+function dateToTimestamp(date: Date): Timestamp {
+	const ms = date.getTime();
+	return create(TimestampSchema, {
+		seconds: BigInt(Math.floor(ms / 1000)),
+		nanos: (ms % 1000) * 1_000_000,
+	});
+}
+
+export type CreateSeasonEventInput = {
+	seasonId: number;
+	trackLayoutId: number;
+	name: string;
+	sequenceNo: number;
+	eventDate: Date;
+};
+
+export type UpdateSeasonEventInput = CreateSeasonEventInput & {
+	eventId: number;
+	status: EventStatus;
+	processingState: EventProcessingState;
+};
+
+export async function createSeasonEvent(
+	input: CreateSeasonEventInput,
+): Promise<Event | undefined> {
+	const response = await getCommandClient().createEvent({
+		seasonId: input.seasonId,
+		trackLayoutId: input.trackLayoutId,
+		name: input.name,
+		sequenceNo: input.sequenceNo,
+		eventDate: dateToTimestamp(input.eventDate),
+		status: EventStatus.SCHEDULED,
+		processingState: EventProcessingState.DRAFT,
+	});
+
+	return response.event;
+}
+
+export async function updateSeasonEvent(
+	input: UpdateSeasonEventInput,
+): Promise<Event | undefined> {
+	const response = await getCommandClient().updateEvent({
+		eventId: input.eventId,
+		seasonId: input.seasonId,
+		trackLayoutId: input.trackLayoutId,
+		name: input.name,
+		sequenceNo: input.sequenceNo,
+		eventDate: dateToTimestamp(input.eventDate),
+		status: input.status,
+		processingState: input.processingState,
+	});
+
+	return response.event;
+}
+
+export async function deleteSeasonEvent(eventId: number): Promise<void> {
+	await getCommandClient().deleteEvent({ eventId });
 }
 
 export async function createSeason(

@@ -14,3 +14,15 @@ code {
 	font-family:
 		source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
 }
+
+.grid-page-results-table .ant-table-tbody > tr.grid-row-state-warning > td {
+	background-color: #fff1f0;
+}
+
+.grid-page-results-table
+	.ant-table-wrapper
+	.ant-table-tbody
+	> tr.grid-row-state-warning:hover
+	> td {
+	background-color: #ffebe8;
+}
