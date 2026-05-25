@@ -1,3 +1,4 @@
+import { GridPage } from "@/pages/Seasons/Event/Race/Grid/GridPage";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { AppLayout } from "../components/Layout/AppLayout";
 import { CallbackPage } from "../pages/Callback/CallbackPage";
@@ -6,6 +7,8 @@ import { CarManagePage } from "../pages/Cars/ManagePage";
 import { DriversPage } from "../pages/Drivers/DriversPage";
 import { LoginPage } from "../pages/Login/LoginPage";
 import { SeasonEditPage } from "../pages/Seasons/EditPage";
+import { RacePage } from "../pages/Seasons/Event/Race/RacePage";
+import { RacesPage } from "../pages/Seasons/Event/RacesPage";
 import { SeasonManagePage } from "../pages/Seasons/ManagePage";
 import { SeasonsPage } from "../pages/Seasons/SeasonsPage";
 import { SeriesPage } from "../pages/Series/SeriesPage";
@@ -39,6 +42,18 @@ export const router = createBrowserRouter([
 			{ path: "seasons/new", element: <SeasonEditPage /> },
 			{ path: "seasons/:seasonId/edit", element: <SeasonEditPage /> },
 			{ path: "seasons/:seasonId/manage", element: <SeasonManagePage /> },
+			{
+				path: "seasons/:seasonId/events/:eventId",
+				element: <RacesPage />,
+			},
+			{
+				path: "seasons/:seasonId/events/:eventId/races/:raceId",
+				element: <RacePage />,
+			},
+			{
+				path: "seasons/:seasonId/events/:eventId/races/:raceId/grids/:gridId",
+				element: <GridPage />,
+			},
 			{ path: "tracks", element: <TracksPage /> },
 			{ path: "tracks/manage", element: <TrackManagePage /> },
 			{ path: "tracks/new", element: <TrackEditPage /> },

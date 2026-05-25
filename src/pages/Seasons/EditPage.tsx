@@ -3,11 +3,13 @@ import {
 	deleteSeason,
 	getSeason,
 	listPointSystems,
+	listSeasonsOverview,
 	seasonToFormValues,
 	updateSeason,
 	type SeasonFormValues,
 	type UpsertSeasonInput,
 } from "@/api/seasons";
+import { SeasonEntityBreadcrumbs } from "@/pages/Seasons/components/SeasonEntityBreadcrumbs";
 import { ArrowLeftOutlined, SaveOutlined } from "@ant-design/icons";
 import type { PointSystem } from "@buf/srlmgr_api.bufbuild_es/backend/common/v1/common_pb";
 import {
@@ -56,6 +58,8 @@ export function SeasonEditPage() {
 			? querySeriesId
 			: null,
 	);
+	const [seriesName, setSeriesName] = useState<string>("");
+	const [seasonName, setSeasonName] = useState<string>("");
 	const [pointSystems, setPointSystems] = useState<PointSystem[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
@@ -66,6 +70,13 @@ export function SeasonEditPage() {
 		setIsLoading(true);
 		try {
 			const pointSystemItems = await listPointSystems();
+			const overviewItems = await listSeasonsOverview();
+			const seriesNamesById = new Map<number, string>();
+			for (const item of overviewItems) {
+				if (!seriesNamesById.has(item.season.seriesId)) {
+					seriesNamesById.set(item.season.seriesId, item.seriesName);
+				}
+			}
 			setPointSystems(pointSystemItems);
 
 			if (isEditing) {
@@ -75,10 +86,22 @@ export function SeasonEditPage() {
 					return;
 				}
 				setSeriesId(season.seriesId);
+				setSeriesName(
+					seriesNamesById.get(season.seriesId) ??
+						`Series #${season.seriesId}`,
+				);
+				setSeasonName(season.name);
 				form.setFieldsValue(seasonToFormValues(season));
 				setGrpcError(null);
 				return;
 			}
+
+			setSeasonName("");
+			setSeriesName(
+				seriesId
+					? (seriesNamesById.get(seriesId) ?? `Series #${seriesId}`)
+					: "",
+			);
 
 			form.setFieldsValue({
 				...NEW_SEASON_DEFAULTS,
@@ -92,7 +115,7 @@ export function SeasonEditPage() {
 		} finally {
 			setIsLoading(false);
 		}
-	}, [form, isEditing, seasonId]);
+	}, [form, isEditing, seasonId, seriesId]);
 
 	useEffect(() => {
 		const timeoutId = window.setTimeout(() => {
@@ -188,6 +211,12 @@ export function SeasonEditPage() {
 
 	return (
 		<Space orientation="vertical" size={16} style={{ width: "100%" }}>
+			<SeasonEntityBreadcrumbs
+				seriesId={seriesId}
+				seriesName={seriesName}
+				seasonId={isEditing ? seasonId : null}
+				seasonName={seasonName}
+			/>
 			<Space>
 				<Button
 					icon={<ArrowLeftOutlined />}
