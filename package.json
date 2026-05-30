@@ -13,8 +13,8 @@
     "test:no-watch": "vitest run"
   },
   "dependencies": {
-    "@ant-design/icons": "^6.2.3",
-    "@buf/srlmgr_api.bufbuild_es": "2.12.0-20260525180703-bc47a144a1f6.1",
+    "@ant-design/icons": "^6.2.5",
+    "@buf/srlmgr_api.bufbuild_es": "2.12.0-20260528060908-318908c1cdf4.1",
     "@bufbuild/protobuf": "^2.12.0",
     "@connectrpc/connect": "^2.1.1",
     "@connectrpc/connect-web": "^2.1.1",
@@ -24,7 +24,7 @@
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-redux": "^9.3.0",
-    "react-router-dom": "^7.15.1"
+    "react-router-dom": "^7.16.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
