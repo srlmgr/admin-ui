@@ -11,9 +11,7 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v6
-        with:
-          version: 10
+        uses: pnpm/action-setup@v6        
       - name: Use Node.js 24
         uses: actions/setup-node@v6
         with:
@@ -22,7 +20,9 @@ jobs:
       - name: Prep npm for using packages from buf.build
         run: |
           pnpm config set @buf:registry  https://buf.build/gen/npm/v1/
-
+      
+      - name: Print pnpm version
+        run: pnpm --version
       - name: Install dependencies
         run: pnpm install
       - name: Test
