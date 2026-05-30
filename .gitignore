@@ -32,3 +32,4 @@ dist-ssr/
 # own
 .gitconfig.local*
 .pnpm-store/
+tmp/
