@@ -30,6 +30,25 @@ export async function listCarManufacturers(): Promise<CarManufacturer[]> {
 	return response.items;
 }
 
+export type CarModelOption = {
+	carModelId: string;
+	label: string;
+};
+
+export async function listAllCarModelOptions(): Promise<CarModelOption[]> {
+	const manufacturers = await listCarManufacturers();
+	const allModels = await Promise.all(
+		manufacturers.map(async (mfr) => {
+			const models = await listCarModels(mfr.id);
+			return models.map((m) => ({
+				carModelId: String(m.id),
+				label: `${m.name} (${mfr.name})`,
+			}));
+		}),
+	);
+	return allModels.flat().sort((a, b) => a.label.localeCompare(b.label));
+}
+
 export async function createCarManufacturer(
 	input: UpsertCarManufacturerInput,
 ): Promise<CarManufacturer | undefined> {
