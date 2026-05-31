@@ -15,6 +15,7 @@ import {
 } from "@buf/srlmgr_api.bufbuild_es/backend/common/v1/common_pb";
 import type {
 	EventContainer,
+	SeasonDriverContainer,
 	TrackLayoutContainer,
 } from "@buf/srlmgr_api.bufbuild_es/backend/query/v1/frontend_pb";
 import { create } from "@bufbuild/protobuf";
@@ -129,6 +130,61 @@ export async function listSeasonEvents(
 		series: response.series,
 		events: response.events,
 	};
+}
+
+export async function listSeasonDrivers(
+	seasonId: number,
+): Promise<SeasonDriverContainer[]> {
+	const response = await getFrontendClient().listSeasonDrivers({ seasonId });
+	return response.items;
+}
+
+export type AddSeasonDriverInput = {
+	seasonId: number;
+	driverId: number;
+	carModelId: string;
+	carNumber: string;
+	joinedAt?: Date;
+};
+
+export async function addSeasonDriver(
+	input: AddSeasonDriverInput,
+): Promise<void> {
+	await getCommandClient().addSeasonDriver({
+		seasonId: input.seasonId,
+		driverId: input.driverId,
+		carModelId: input.carModelId,
+		carNumber: input.carNumber,
+		joinedAt: input.joinedAt ? dateToTimestamp(input.joinedAt) : undefined,
+	});
+}
+
+export async function deleteSeasonDriverEntry(id: number): Promise<void> {
+	await getCommandClient().deleteSeasonDriver({ id });
+}
+
+export type SeasonDriverEntry = {
+	driverId: number;
+	carModelId: string;
+	carNumber: string;
+	joinedAt?: Date;
+	leftAt?: Date;
+};
+
+export async function setSeasonDrivers(
+	seasonId: number,
+	entries: SeasonDriverEntry[],
+): Promise<void> {
+	await getCommandClient().setSeasonDrivers({
+		seasonId,
+		drivers: entries.map((e) => ({
+			driverId: e.driverId,
+			carModelId: e.carModelId,
+			carNumber: e.carNumber,
+			joinedAt: e.joinedAt ? dateToTimestamp(e.joinedAt) : undefined,
+			leftAt: e.leftAt ? dateToTimestamp(e.leftAt) : undefined,
+		})),
+	});
 }
 
 export async function listTrackLayoutsForSimulation(

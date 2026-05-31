@@ -4,6 +4,7 @@ import {
 	listSeasonEvents,
 } from "@/api/seasons";
 import { NewEventModal } from "@/pages/Seasons/components/NewEventModal";
+import { SeasonDrivers } from "@/pages/Seasons/components/SeasonDrivers";
 import { SeasonEntityBreadcrumbs } from "@/pages/Seasons/components/SeasonEntityBreadcrumbs";
 import {
 	ArrowLeftOutlined,
@@ -276,6 +277,8 @@ export function SeasonManagePage() {
 					]}
 				/>
 			</Card>
+
+			<SeasonDrivers seasonId={seasonId} />
 
 			<NewEventModal
 				open={isNewEventOpen || editingEvent !== null}
