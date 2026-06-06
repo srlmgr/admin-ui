@@ -14,17 +14,17 @@
   },
   "dependencies": {
     "@ant-design/icons": "^6.2.5",
-    "@buf/srlmgr_api.bufbuild_es": "2.12.0-20260530162519-f414c68b4b7b.1",
+    "@buf/srlmgr_api.bufbuild_es": "2.12.0-20260604070610-ceee650b2a6f.1",
     "@bufbuild/protobuf": "^2.12.0",
     "@connectrpc/connect": "^2.1.1",
     "@connectrpc/connect-web": "^2.1.1",
     "@reduxjs/toolkit": "^2.12.0",
     "antd": "^6.4.3",
     "dayjs": "^1.11.21",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
     "react-redux": "^9.3.0",
-    "react-router-dom": "^7.16.0"
+    "react-router-dom": "^7.17.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -32,7 +32,7 @@
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
     "@types/node": "^25.9.1",
-    "@types/react": "^19.2.15",
+    "@types/react": "^19.2.17",
     "@types/react-dom": "^19.1.4",
     "@vitejs/plugin-react": "^6.0.2",
     "eslint": "^10.4.1",
