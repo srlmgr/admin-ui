@@ -31,7 +31,7 @@ export async function listCarManufacturers(): Promise<CarManufacturer[]> {
 }
 
 export type CarModelOption = {
-	carModelId: string;
+	carModelId: number;
 	label: string;
 };
 
@@ -41,7 +41,7 @@ export async function listAllCarModelOptions(): Promise<CarModelOption[]> {
 		manufacturers.map(async (mfr) => {
 			const models = await listCarModels(mfr.id);
 			return models.map((m) => ({
-				carModelId: String(m.id),
+				carModelId: m.id,
 				label: `${m.name} (${mfr.name})`,
 			}));
 		}),

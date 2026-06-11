@@ -6,6 +6,7 @@ import {
 import { NewEventModal } from "@/pages/Seasons/components/NewEventModal";
 import { SeasonDrivers } from "@/pages/Seasons/components/SeasonDrivers";
 import { SeasonEntityBreadcrumbs } from "@/pages/Seasons/components/SeasonEntityBreadcrumbs";
+import { SeasonTeams } from "@/pages/Seasons/components/SeasonTeams";
 import {
 	ArrowLeftOutlined,
 	DeleteOutlined,
@@ -22,6 +23,7 @@ import {
 	Popconfirm,
 	Space,
 	Table,
+	Tabs,
 	Typography,
 	message,
 } from "antd";
@@ -66,6 +68,7 @@ export function SeasonManagePage() {
 	const [seriesId, setSeriesId] = useState<number | null>(null);
 	const [seriesName, setSeriesName] = useState<string>("");
 	const [seasonName, setSeasonName] = useState<string>("");
+	const [seasonIsTeamBased, setSeasonIsTeamBased] = useState(false);
 	const [events, setEvents] = useState<SeasonEventRow[]>([]);
 	const [simulationId, setSimulationId] = useState<number | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
@@ -95,6 +98,7 @@ export function SeasonManagePage() {
 			setSeasonName(
 				seasonEventsData.season?.name ?? `Season #${seasonId}`,
 			);
+			setSeasonIsTeamBased(seasonEventsData.season?.isTeamBased ?? false);
 			setSimulationId(seasonEventsData.series?.simulationId ?? null);
 			setEvents(toSeasonEventRows(seasonEventsData.events));
 		} catch (error) {
@@ -168,117 +172,170 @@ export function SeasonManagePage() {
 				</Title>
 			</Space>
 
-			<Card
-				title="Season Events"
-				extra={
-					<Space>
-						<Button
-							icon={<PlusOutlined />}
-							onClick={() => {
-								setEditingEvent(null);
-								setIsNewEventOpen(true);
-							}}
-							disabled={simulationId === null}
-						>
-							New event
-						</Button>
-						<Button
-							icon={<ReloadOutlined />}
-							onClick={() => void loadData()}
-							loading={isLoading}
-						>
-							Refresh
-						</Button>
-					</Space>
-				}
-			>
-				<Table<SeasonEventRow>
-					rowKey={(row) => row.event.id}
-					loading={isLoading}
-					dataSource={sortedEvents}
-					pagination={{ pageSize: 20, showSizeChanger: true }}
-					columns={[
-						{
-							title: "Event Name",
-							key: "name",
-							render: (_, row) => row.event.name,
-							sorter: (a, b) =>
-								a.event.name.localeCompare(b.event.name),
-						},
-						{
-							title: "Event Date",
-							key: "eventDate",
-							render: (_, row) =>
-								formatTimestamp(row.event.eventDate),
-							sorter: (a, b) =>
-								Number(a.event.eventDate?.seconds ?? 0n) -
-								Number(b.event.eventDate?.seconds ?? 0n),
-						},
-						{
-							title: "Track",
-							key: "track",
-							render: (_, row) => row.trackLabel,
-							sorter: (a, b) =>
-								a.trackLabel.localeCompare(b.trackLabel),
-						},
-						{
-							title: "Actions",
-							key: "actions",
-							render: (_, row) => (
-								<Space size={4}>
-									<Button
-										type="text"
-										icon={<EditOutlined />}
-										onClick={() => setEditingEvent(row)}
-										disabled={simulationId === null}
-									>
-										Edit
-									</Button>
-									<Button
-										type="text"
-										icon={<SettingOutlined />}
-										onClick={() =>
-											navigate(
-												`/seasons/${seasonId}/events/${row.event.id}`,
-												{
-													state: {
-														eventName:
-															row.event.name,
-													},
-												},
-											)
-										}
-									>
-										Manage
-									</Button>
-									<Popconfirm
-										title="Delete event"
-										description={`Delete ${row.event.name}?`}
-										onConfirm={() =>
-											void handleDeleteEvent(row)
-										}
-										okText="Delete"
-										okButtonProps={{ danger: true }}
-									>
+			<Tabs
+				items={[
+					{
+						key: "events",
+						label: "Events",
+						children: (
+							<Card
+								title="Season Events"
+								extra={
+									<Space>
 										<Button
-											type="text"
-											danger
-											icon={<DeleteOutlined />}
-											loading={
-												deletingEventId === row.event.id
-											}
+											icon={<PlusOutlined />}
+											onClick={() => {
+												setEditingEvent(null);
+												setIsNewEventOpen(true);
+											}}
+											disabled={simulationId === null}
 										>
-											Delete
+											New event
 										</Button>
-									</Popconfirm>
-								</Space>
-							),
-						},
-					]}
-				/>
-			</Card>
-
-			<SeasonDrivers seasonId={seasonId} />
+										<Button
+											icon={<ReloadOutlined />}
+											onClick={() => void loadData()}
+											loading={isLoading}
+										>
+											Refresh
+										</Button>
+									</Space>
+								}
+							>
+								<Table<SeasonEventRow>
+									rowKey={(row) => row.event.id}
+									loading={isLoading}
+									dataSource={sortedEvents}
+									pagination={{
+										showSizeChanger: true,
+									}}
+									columns={[
+										{
+											title: "Event Name",
+											key: "name",
+											render: (_, row) => row.event.name,
+											sorter: (a, b) =>
+												a.event.name.localeCompare(
+													b.event.name,
+												),
+										},
+										{
+											title: "Event Date",
+											key: "eventDate",
+											render: (_, row) =>
+												formatTimestamp(
+													row.event.eventDate,
+												),
+											sorter: (a, b) =>
+												Number(
+													a.event.eventDate
+														?.seconds ?? 0n,
+												) -
+												Number(
+													b.event.eventDate
+														?.seconds ?? 0n,
+												),
+										},
+										{
+											title: "Track",
+											key: "track",
+											render: (_, row) => row.trackLabel,
+											sorter: (a, b) =>
+												a.trackLabel.localeCompare(
+													b.trackLabel,
+												),
+										},
+										{
+											title: "Actions",
+											key: "actions",
+											render: (_, row) => (
+												<Space size={4}>
+													<Button
+														type="text"
+														icon={<EditOutlined />}
+														onClick={() =>
+															setEditingEvent(row)
+														}
+														disabled={
+															simulationId ===
+															null
+														}
+													>
+														Edit
+													</Button>
+													<Button
+														type="text"
+														icon={
+															<SettingOutlined />
+														}
+														onClick={() =>
+															navigate(
+																`/seasons/${seasonId}/events/${row.event.id}`,
+																{
+																	state: {
+																		eventName:
+																			row
+																				.event
+																				.name,
+																	},
+																},
+															)
+														}
+													>
+														Manage
+													</Button>
+													<Popconfirm
+														title="Delete event"
+														description={`Delete ${row.event.name}?`}
+														onConfirm={() =>
+															void handleDeleteEvent(
+																row,
+															)
+														}
+														okText="Delete"
+														okButtonProps={{
+															danger: true,
+														}}
+													>
+														<Button
+															type="text"
+															danger
+															icon={
+																<DeleteOutlined />
+															}
+															loading={
+																deletingEventId ===
+																row.event.id
+															}
+														>
+															Delete
+														</Button>
+													</Popconfirm>
+												</Space>
+											),
+										},
+									]}
+								/>
+							</Card>
+						),
+					},
+					{
+						key: "drivers",
+						label: "Drivers",
+						children: <SeasonDrivers seasonId={seasonId} />,
+					},
+					{
+						key: "teams",
+						label: "Teams",
+						children: (
+							<SeasonTeams
+								seasonId={seasonId}
+								isTeamBased={seasonIsTeamBased}
+							/>
+						),
+					},
+				]}
+			/>
 
 			<NewEventModal
 				open={isNewEventOpen || editingEvent !== null}

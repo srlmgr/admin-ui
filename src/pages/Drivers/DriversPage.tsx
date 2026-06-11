@@ -423,7 +423,7 @@ export function DriversPage() {
 								rowKey="id"
 								size="small"
 								pagination={{
-									defaultPageSize: 20,
+									defaultPageSize: 50,
 									showSizeChanger: true,
 									pageSizeOptions: [20, 50, 100],
 								}}

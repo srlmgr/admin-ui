@@ -114,7 +114,7 @@ export function SeasonsPage() {
 					rowKey={(row) => row.season.id}
 					loading={isLoading}
 					dataSource={items}
-					pagination={{ pageSize: 20, showSizeChanger: true }}
+					pagination={{ defaultPageSize: 20, showSizeChanger: true }}
 					columns={[
 						{
 							title: "Season Name",
