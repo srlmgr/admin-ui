@@ -189,7 +189,11 @@ export function TrackManagePage() {
 				dataSource={filteredTracks}
 				loading={loading}
 				rowKey="id"
-				pagination={{ pageSize: 10 }}
+				pagination={{
+					defaultPageSize: 20,
+					showSizeChanger: true,
+					size: "small",
+				}}
 			/>
 		</div>
 	);

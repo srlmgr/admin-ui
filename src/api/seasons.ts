@@ -8,6 +8,8 @@ import type {
 	PointSystem,
 	Season,
 	Series,
+	Team,
+	TeamMember,
 } from "@buf/srlmgr_api.bufbuild_es/backend/common/v1/common_pb";
 import {
 	EventProcessingState,
@@ -16,6 +18,7 @@ import {
 import type {
 	EventContainer,
 	SeasonDriverContainer,
+	SeasonTeamContainer,
 	TrackLayoutContainer,
 } from "@buf/srlmgr_api.bufbuild_es/backend/query/v1/frontend_pb";
 import { create } from "@bufbuild/protobuf";
@@ -139,13 +142,31 @@ export async function listSeasonDrivers(
 	return response.items;
 }
 
+export async function listSeasonTeams(
+	seasonId: number,
+): Promise<SeasonTeamContainer[]> {
+	const response = await getFrontendClient().listSeasonTeams({ seasonId });
+	return response.items;
+}
+
 export type AddSeasonDriverInput = {
 	seasonId: number;
 	driverId: number;
-	carModelId: string;
+	carModelId: number | string;
 	carNumber: string;
 	joinedAt?: Date;
 };
+
+function toRequiredUInt32(value: number | string, fieldName: string): number {
+	const normalized =
+		typeof value === "number" ? value : Number.parseInt(value, 10);
+
+	if (!Number.isInteger(normalized) || normalized < 0) {
+		throw new Error(`${fieldName} must be a non-negative integer`);
+	}
+
+	return normalized;
+}
 
 export async function addSeasonDriver(
 	input: AddSeasonDriverInput,
@@ -153,7 +174,7 @@ export async function addSeasonDriver(
 	await getCommandClient().addSeasonDriver({
 		seasonId: input.seasonId,
 		driverId: input.driverId,
-		carModelId: input.carModelId,
+		carModelId: toRequiredUInt32(input.carModelId, "carModelId"),
 		carNumber: input.carNumber,
 		joinedAt: input.joinedAt ? dateToTimestamp(input.joinedAt) : undefined,
 	});
@@ -163,9 +184,147 @@ export async function deleteSeasonDriverEntry(id: number): Promise<void> {
 	await getCommandClient().deleteSeasonDriver({ id });
 }
 
+export type UpsertSeasonTeamInput = {
+	seasonId: number;
+	name: string;
+	isActive: boolean;
+	carModelId?: number | string;
+	carNumber?: string;
+	joinedAt?: Date;
+	leftAt?: Date;
+};
+
+function toUInt32OrUndefined(value?: number | string): number | undefined {
+	if (value === undefined || value === null || value === "") {
+		return undefined;
+	}
+
+	const numericValue =
+		typeof value === "number" ? value : Number.parseInt(value, 10);
+
+	if (!Number.isInteger(numericValue) || numericValue < 0) {
+		return undefined;
+	}
+
+	return numericValue;
+}
+
+export async function createSeasonTeam(
+	input: UpsertSeasonTeamInput,
+): Promise<Team | undefined> {
+	type CreateTeamPayload = Parameters<
+		ReturnType<typeof getCommandClient>["createTeam"]
+	>[0];
+	const payload: CreateTeamPayload = {
+		seasonId: input.seasonId,
+		name: input.name,
+		isActive: input.isActive,
+	};
+
+	if (input.joinedAt) {
+		(payload as unknown as Record<string, unknown>).joinedAt =
+			dateToTimestamp(input.joinedAt);
+	}
+
+	if (input.carModelId) {
+		const normalizedCarModelId = toUInt32OrUndefined(input.carModelId);
+		if (normalizedCarModelId !== undefined) {
+			(payload as unknown as Record<string, unknown>).carModelId =
+				normalizedCarModelId;
+		}
+	}
+	if (input.carNumber) {
+		(payload as unknown as Record<string, unknown>).carNumber =
+			input.carNumber.trim();
+	}
+
+	const response = await getCommandClient().createTeam(payload);
+	return response.team;
+}
+
+export async function updateSeasonTeam(
+	teamId: number,
+	input: UpsertSeasonTeamInput,
+): Promise<Team | undefined> {
+	type UpdateTeamPayload = Parameters<
+		ReturnType<typeof getCommandClient>["updateTeam"]
+	>[0];
+	const payload: UpdateTeamPayload = {
+		teamId,
+		seasonId: input.seasonId,
+		name: input.name,
+		isActive: input.isActive,
+	};
+
+	if (input.joinedAt) {
+		(payload as unknown as Record<string, unknown>).joinedAt =
+			dateToTimestamp(input.joinedAt);
+	}
+	if (input.leftAt) {
+		(payload as unknown as Record<string, unknown>).leftAt =
+			dateToTimestamp(input.leftAt);
+	}
+
+	if (input.carModelId) {
+		const normalizedCarModelId = toUInt32OrUndefined(input.carModelId);
+		if (normalizedCarModelId !== undefined) {
+			(payload as unknown as Record<string, unknown>).carModelId =
+				normalizedCarModelId;
+		}
+	}
+	if (input.carNumber) {
+		(payload as unknown as Record<string, unknown>).carNumber =
+			input.carNumber.trim();
+	}
+
+	const response = await getCommandClient().updateTeam(payload);
+	return response.team;
+}
+
+export async function deleteSeasonTeam(teamId: number): Promise<boolean> {
+	const response = await getCommandClient().deleteTeam({ teamId });
+	return response.deleted;
+}
+
+export async function addTeamMember(
+	teamId: number,
+	driverId: number,
+	options?: {
+		joinedAt?: Date;
+		leftAt?: Date;
+	},
+): Promise<void> {
+	type AddTeamMemberPayload = Parameters<
+		ReturnType<typeof getCommandClient>["addTeamMember"]
+	>[0];
+	const payload: AddTeamMemberPayload = {
+		teamId,
+		driverId,
+		joinedAt: options?.joinedAt
+			? dateToTimestamp(options.joinedAt)
+			: undefined,
+		leftAt: options?.leftAt ? dateToTimestamp(options.leftAt) : undefined,
+	};
+
+	await getCommandClient().addTeamMember(payload);
+}
+
+export async function removeTeamMember(id: number): Promise<void> {
+	await getCommandClient().removeTeamMember({ id });
+}
+
+export async function deleteTeamMember(id: number): Promise<void> {
+	await getCommandClient().deleteTeamMember({ id });
+}
+
+export async function listTeamMembers(teamId: number): Promise<TeamMember[]> {
+	const response = await getQueryClient().getTeamMembers({ id: teamId });
+	return response.members;
+}
+
 export type SeasonDriverEntry = {
 	driverId: number;
-	carModelId: string;
+	carModelId: number | string;
 	carNumber: string;
 	joinedAt?: Date;
 	leftAt?: Date;
@@ -179,7 +338,7 @@ export async function setSeasonDrivers(
 		seasonId,
 		drivers: entries.map((e) => ({
 			driverId: e.driverId,
-			carModelId: e.carModelId,
+			carModelId: toRequiredUInt32(e.carModelId, "carModelId"),
 			carNumber: e.carNumber,
 			joinedAt: e.joinedAt ? dateToTimestamp(e.joinedAt) : undefined,
 			leftAt: e.leftAt ? dateToTimestamp(e.leftAt) : undefined,

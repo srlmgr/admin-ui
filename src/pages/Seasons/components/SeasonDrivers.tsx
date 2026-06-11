@@ -22,7 +22,7 @@ type SeasonDriverRow = {
 	key: string;
 	seasonDriverId: number;
 	driverId: number;
-	carModelId: string;
+	carModelId: number;
 	carNumber: string;
 	driverName: string;
 	carModelName: string;

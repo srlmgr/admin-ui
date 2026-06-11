@@ -163,7 +163,11 @@ export function TrackLayoutsPage() {
 							dataSource={layouts}
 							loading={loading}
 							rowKey="id"
-							pagination={{ pageSize: 10 }}
+							pagination={{
+								defaultPageSize: 20,
+								showSizeChanger: true,
+								size: "small",
+							}}
 						/>
 					)}
 				</Spin>

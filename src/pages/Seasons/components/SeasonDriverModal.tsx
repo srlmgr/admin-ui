@@ -11,7 +11,7 @@ import { useCallback, useEffect, useState } from "react";
 export type SeasonDriverRowData = {
 	seasonDriverId: number;
 	driverId: number;
-	carModelId: string;
+	carModelId: number;
 	carNumber: string;
 	joinedAt?: Timestamp;
 	leftAt?: Timestamp;
@@ -19,7 +19,7 @@ export type SeasonDriverRowData = {
 
 type SeasonDriverFormValues = {
 	driverId: number;
-	carModelId: string;
+	carModelId: number;
 	carNumber: string;
 	joinedAt?: Dayjs;
 	leftAt?: Dayjs;
