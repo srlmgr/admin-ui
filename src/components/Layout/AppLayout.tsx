@@ -1,6 +1,7 @@
 import { RootState } from "@/store";
 import { clearUser } from "@/store/slices/authSlice";
 import {
+	ApartmentOutlined,
 	CalendarOutlined,
 	CarOutlined,
 	EnvironmentOutlined,
@@ -23,6 +24,11 @@ const menuItems = [
 	{ key: "simulation", icon: <ExperimentOutlined />, label: "Simulation" },
 	{ key: "series", icon: <TrophyOutlined />, label: "Series" },
 	{ key: "seasons", icon: <CalendarOutlined />, label: "Seasons" },
+	{
+		key: "point-systems",
+		icon: <ApartmentOutlined />,
+		label: "Point Systems",
+	},
 	{ key: "tracks", icon: <EnvironmentOutlined />, label: "Tracks" },
 	{ key: "cars", icon: <CarOutlined />, label: "Cars" },
 ];

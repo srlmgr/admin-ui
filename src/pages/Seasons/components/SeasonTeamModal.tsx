@@ -201,23 +201,6 @@ export function SeasonTeamModal({
 				{isTeamBased ? (
 					<>
 						<Form.Item
-							label="Car Number"
-							name="carNumber"
-							rules={[
-								{
-									required: true,
-									message: "Car number is required",
-								},
-								{
-									whitespace: true,
-									message: "Car number is required",
-								},
-							]}
-						>
-							<Input placeholder="e.g. 42" />
-						</Form.Item>
-
-						<Form.Item
 							label="Car Model"
 							name="carModelId"
 							rules={[
@@ -239,6 +222,22 @@ export function SeasonTeamModal({
 								}
 								options={carModelSelectOptions}
 							/>
+						</Form.Item>
+						<Form.Item
+							label="Car Number"
+							name="carNumber"
+							rules={[
+								{
+									required: true,
+									message: "Car number is required",
+								},
+								{
+									whitespace: true,
+									message: "Car number is required",
+								},
+							]}
+						>
+							<Input placeholder="e.g. 42" />
 						</Form.Item>
 					</>
 				) : null}
