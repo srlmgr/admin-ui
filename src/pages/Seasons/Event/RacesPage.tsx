@@ -4,6 +4,7 @@ import {
 	deleteRace,
 	getEventDriverStandings,
 	getEventTeamStandings,
+	listRaceGrids,
 	listRaces,
 	updateRaceName,
 } from "@/api/events";
@@ -22,6 +23,7 @@ import {
 	type Driver,
 	type DriverStanding,
 	type Race,
+	type RaceGrid,
 	type Team,
 	type TeamStanding,
 } from "@buf/srlmgr_api.bufbuild_es/backend/common/v1/common_pb";
@@ -89,6 +91,7 @@ export function RacesPage() {
 	const [createForm] = Form.useForm<CreateRacesFormValues>();
 	const [editRaceForm] = Form.useForm<EditRaceFormValues>();
 	const [races, setRaces] = useState<Race[]>([]);
+	const [raceGrids, setRaceGrids] = useState<RaceGrid[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 	const [isCreating, setIsCreating] = useState(false);
@@ -128,7 +131,11 @@ export function RacesPage() {
 				listRaces(eventId),
 				listSeasonEvents(seasonId),
 			]);
+			const raceGridItems = (
+				await Promise.all(items.map((race) => listRaceGrids(race.id)))
+			).flat();
 			setRaces(items);
+			setRaceGrids(raceGridItems);
 			setSeriesId(seasonEventsData.series?.id ?? null);
 			setSeriesName(
 				seasonEventsData.series?.name ??
@@ -644,6 +651,8 @@ export function RacesPage() {
 			<SummarySection
 				scope={{ case: "eventId", value: eventId }}
 				refreshToken={summaryRefreshToken}
+				races={races}
+				grids={raceGrids}
 			/>
 
 			<Modal

@@ -1,8 +1,11 @@
 import { getEventSummary, getRaceSummary } from "@/api/events";
+import { BookingEntriesTable } from "@/pages/Seasons/Event/components/BookingEntriesTable";
 import { ReloadOutlined } from "@ant-design/icons";
 import {
 	SummaryTargetType,
 	type Driver,
+	type Race,
+	type RaceGrid,
 	type Summary,
 	type Team,
 } from "@buf/srlmgr_api.bufbuild_es/backend/common/v1/common_pb";
@@ -24,6 +27,8 @@ type SummarySectionProps = {
 	scope: SummaryScope;
 	summaryTargetType?: SummaryTargetType;
 	refreshToken?: number;
+	races?: Race[];
+	grids?: RaceGrid[];
 };
 
 type SummaryTableRow = Summary & {
@@ -87,8 +92,11 @@ export function SummarySection({
 	scope,
 	summaryTargetType,
 	refreshToken,
+	races = [],
+	grids = [],
 }: SummarySectionProps) {
 	const [isLoading, setIsLoading] = useState(false);
+	const [bookingRefreshToken, setBookingRefreshToken] = useState(0);
 	const [driverSummaries, setDriverSummaries] = useState<Summary[]>([]);
 	const [drivers, setDrivers] = useState<Driver[]>([]);
 	const [teamSummaries, setTeamSummaries] = useState<Summary[]>([]);
@@ -195,6 +203,19 @@ export function SummarySection({
 				/>
 			),
 		},
+
+		{
+			key: "bookingEntries",
+			label: "Booking Entries",
+			children: (
+				<BookingEntriesTable
+					scope={scope}
+					races={races}
+					grids={grids}
+					refreshToken={bookingRefreshToken}
+				/>
+			),
+		},
 	];
 
 	const singleTargetRows =
@@ -219,6 +240,7 @@ export function SummarySection({
 							onClick={(event) => {
 								event.stopPropagation();
 								void loadSummary();
+								setBookingRefreshToken((t) => t + 1);
 							}}
 							loading={isLoading}
 						>

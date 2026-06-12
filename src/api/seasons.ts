@@ -326,6 +326,7 @@ export type SeasonDriverEntry = {
 	driverId: number;
 	carModelId: number | string;
 	carNumber: string;
+	isGuestDriver: boolean;
 	joinedAt?: Date;
 	leftAt?: Date;
 };
@@ -340,6 +341,7 @@ export async function setSeasonDrivers(
 			driverId: e.driverId,
 			carModelId: toRequiredUInt32(e.carModelId, "carModelId"),
 			carNumber: e.carNumber,
+			isGuestDriver: e.isGuestDriver,
 			joinedAt: e.joinedAt ? dateToTimestamp(e.joinedAt) : undefined,
 			leftAt: e.leftAt ? dateToTimestamp(e.leftAt) : undefined,
 		})),
