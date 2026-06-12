@@ -12,6 +12,11 @@ import {
 	type ResultEntry,
 } from "@buf/srlmgr_api.bufbuild_es/backend/common/v1/common_pb";
 import type { GetPreprocessPreviewResponse } from "@buf/srlmgr_api.bufbuild_es/backend/import/v1/import_pb";
+import {
+	type AddPenaltyRequest,
+	type DeletePenaltyRequest,
+	type PenaltyTarget,
+} from "@buf/srlmgr_api.bufbuild_es/backend/import/v1/import_pb";
 import type {
 	GetDriverStandingsResponse,
 	GetSummaryResponse,
@@ -167,6 +172,41 @@ export async function applyRaceGridResultEdits(input: {
 		raceGridId: input.gridId,
 		editedRows: input.editedRows,
 	});
+}
+
+export type AddPenaltyInput = {
+	scope:
+		| { case: "eventId"; value: number }
+		| { case: "raceId"; value: number }
+		| { case: "raceGridId"; value: number };
+	target:
+		| { case: "driverId"; value: number }
+		| { case: "teamId"; value: number };
+	penaltyPoints: number;
+	reason: string;
+};
+
+export async function addPenalty(input: AddPenaltyInput): Promise<void> {
+	const target: PenaltyTarget = {
+		scope: input.scope,
+		target: input.target,
+	};
+
+	const payload: AddPenaltyRequest = {
+		target,
+		penaltyPoints: input.penaltyPoints,
+		reason: input.reason,
+	};
+
+	await getImportClient().addPenalty(payload);
+}
+
+export async function deletePenalty(penaltyId: number): Promise<void> {
+	const payload: DeletePenaltyRequest = {
+		penaltyId,
+	};
+
+	await getImportClient().deletePenalty(payload);
 }
 
 export async function computeBookingEntries(eventId: number): Promise<number> {

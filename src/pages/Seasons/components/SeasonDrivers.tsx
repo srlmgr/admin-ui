@@ -26,6 +26,7 @@ type SeasonDriverRow = {
 	carNumber: string;
 	driverName: string;
 	carModelName: string;
+	isGuestDriver: boolean;
 	joinedAt?: Timestamp;
 	leftAt?: Timestamp;
 };
@@ -94,6 +95,7 @@ function toRows(
 				carModelName:
 					carModel?.name?.trim() ||
 					`Car model #${seasonDriver.carModelId}`,
+				isGuestDriver: seasonDriver.isGuestDriver,
 				joinedAt: seasonDriver.joinedAt,
 				leftAt: seasonDriver.leftAt,
 			});
@@ -109,6 +111,7 @@ function toRowData(row: SeasonDriverRow): SeasonDriverRowData {
 		driverId: row.driverId,
 		carModelId: row.carModelId,
 		carNumber: row.carNumber,
+		isGuestDriver: row.isGuestDriver,
 		joinedAt: row.joinedAt,
 		leftAt: row.leftAt,
 	};
@@ -264,6 +267,16 @@ export function SeasonDrivers({ seasonId }: SeasonDriversProps) {
 							dataIndex: "carModelName",
 							sorter: (a, b) =>
 								a.carModelName.localeCompare(b.carModelName),
+						},
+						{
+							title: "Guest",
+							key: "isGuestDriver",
+							dataIndex: "isGuestDriver",
+							render: (isGuestDriver: boolean) =>
+								isGuestDriver ? "Yes" : "No",
+							sorter: (a, b) =>
+								Number(a.isGuestDriver) -
+								Number(b.isGuestDriver),
 						},
 						{
 							title: "Joined At",

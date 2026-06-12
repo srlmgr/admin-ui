@@ -9,6 +9,7 @@ import {
 import { listSeasonEvents } from "@/api/seasons";
 import { SeasonEntityBreadcrumbs } from "@/pages/Seasons/components/SeasonEntityBreadcrumbs";
 import { BookingEntriesTable } from "@/pages/Seasons/Event/components/BookingEntriesTable";
+import { GridPenaltiesSection } from "@/pages/Seasons/Event/components/GridPenaltiesSection";
 import { EditResultRowModal } from "@/pages/Seasons/Event/Race/Grid/EditResultRowModal";
 import {
 	ArrowLeftOutlined,
@@ -587,6 +588,12 @@ export function GridPage() {
 					onSubmit={handleSaveRow}
 				/>
 			</Card>
+
+			<GridPenaltiesSection
+				scope={{ case: "gridId", value: gridId }}
+				seasonId={seasonId}
+				isSeasonTeamBased={isSeasonTeamBased}
+			/>
 
 			<Card title="Booking entries">
 				<BookingEntriesTable

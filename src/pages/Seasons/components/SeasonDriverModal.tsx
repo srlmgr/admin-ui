@@ -3,7 +3,7 @@ import { listDrivers } from "@/api/drivers";
 import { setSeasonDrivers, type SeasonDriverEntry } from "@/api/seasons";
 import type { Driver } from "@buf/srlmgr_api.bufbuild_es/backend/common/v1/common_pb";
 import type { Timestamp } from "@bufbuild/protobuf/wkt";
-import { DatePicker, Form, Input, Modal, Select, message } from "antd";
+import { DatePicker, Form, Input, Modal, Select, Switch, message } from "antd";
 import type { Dayjs } from "dayjs";
 import dayjs from "dayjs";
 import { useCallback, useEffect, useState } from "react";
@@ -13,6 +13,7 @@ export type SeasonDriverRowData = {
 	driverId: number;
 	carModelId: number;
 	carNumber: string;
+	isGuestDriver: boolean;
 	joinedAt?: Timestamp;
 	leftAt?: Timestamp;
 };
@@ -21,6 +22,7 @@ type SeasonDriverFormValues = {
 	driverId: number;
 	carModelId: number;
 	carNumber: string;
+	isGuestDriver: boolean;
 	joinedAt?: Dayjs;
 	leftAt?: Dayjs;
 };
@@ -95,6 +97,7 @@ export function SeasonDriverModal({
 					driverId: editRow.driverId,
 					carModelId: editRow.carModelId,
 					carNumber: editRow.carNumber,
+					isGuestDriver: editRow.isGuestDriver,
 					joinedAt: timestampToDayjs(editRow.joinedAt),
 					leftAt: timestampToDayjs(editRow.leftAt),
 				});
@@ -116,6 +119,7 @@ export function SeasonDriverModal({
 				driverId: values.driverId,
 				carModelId: values.carModelId,
 				carNumber: values.carNumber.trim(),
+				isGuestDriver: values.isGuestDriver ?? false,
 				joinedAt: dayjsToDate(values.joinedAt),
 				leftAt: dayjsToDate(values.leftAt),
 			};
@@ -129,6 +133,7 @@ export function SeasonDriverModal({
 								driverId: row.driverId,
 								carModelId: row.carModelId,
 								carNumber: row.carNumber,
+								isGuestDriver: row.isGuestDriver,
 								joinedAt: row.joinedAt
 									? new Date(
 											Number(row.joinedAt.seconds) * 1000,
@@ -147,6 +152,7 @@ export function SeasonDriverModal({
 						driverId: row.driverId,
 						carModelId: row.carModelId,
 						carNumber: row.carNumber,
+						isGuestDriver: row.isGuestDriver,
 						joinedAt: row.joinedAt
 							? new Date(Number(row.joinedAt.seconds) * 1000)
 							: undefined,
@@ -257,6 +263,15 @@ export function SeasonDriverModal({
 					]}
 				>
 					<Input placeholder="e.g. 42" />
+				</Form.Item>
+
+				<Form.Item
+					label="Guest Driver"
+					name="isGuestDriver"
+					valuePropName="checked"
+					initialValue={false}
+				>
+					<Switch size="small" />
 				</Form.Item>
 
 				<Form.Item label="Joined At" name="joinedAt">
