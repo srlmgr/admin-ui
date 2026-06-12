@@ -238,7 +238,7 @@ export function SeasonDrivers({ seasonId }: SeasonDriversProps) {
 					loading={isLoading}
 					dataSource={sortedRows}
 					pagination={{
-						pageSize: 20,
+						defaultPageSize: 50,
 						showSizeChanger: true,
 						size: "small",
 					}}

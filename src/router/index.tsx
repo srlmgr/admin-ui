@@ -6,6 +6,9 @@ import { CarsPage } from "../pages/Cars/CarsPage";
 import { CarManagePage } from "../pages/Cars/ManagePage";
 import { DriversPage } from "../pages/Drivers/DriversPage";
 import { LoginPage } from "../pages/Login/LoginPage";
+import { PointSystemEditPage } from "../pages/PointSystem/EditPage";
+import { PointSystemManagePage } from "../pages/PointSystem/ManagePage";
+import { PointSystemsPage } from "../pages/PointSystem/PointSystemsPage";
 import { SeasonEditPage } from "../pages/Seasons/EditPage";
 import { RacePage } from "../pages/Seasons/Event/Race/RacePage";
 import { RacesPage } from "../pages/Seasons/Event/RacesPage";
@@ -39,6 +42,16 @@ export const router = createBrowserRouter([
 			{ path: "simulation", element: <SimulationPage /> },
 			{ path: "series", element: <SeriesPage /> },
 			{ path: "seasons", element: <SeasonsPage /> },
+			{ path: "point-systems", element: <PointSystemsPage /> },
+			{
+				path: "point-systems/manage",
+				element: <PointSystemManagePage />,
+			},
+			{ path: "point-systems/new", element: <PointSystemEditPage /> },
+			{
+				path: "point-systems/:pointSystemId/edit",
+				element: <PointSystemEditPage />,
+			},
 			{ path: "seasons/new", element: <SeasonEditPage /> },
 			{ path: "seasons/:seasonId/edit", element: <SeasonEditPage /> },
 			{ path: "seasons/:seasonId/manage", element: <SeasonManagePage /> },
