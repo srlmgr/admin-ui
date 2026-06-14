@@ -45,7 +45,9 @@
     "TZ": "Europe/Berlin"
   },
 
-  "features": {},
+  "features": {
+    "ghcr.io/jungaretti/features/ripgrep:1": {}
+  },
   // Use 'postCreateCommand' to run commands after the container is created.
   "postCreateCommand": "./devinit.sh",
 

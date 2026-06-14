@@ -4,6 +4,7 @@ import { ImportService } from "@buf/srlmgr_api.bufbuild_es/backend/import/v1/imp
 import { BookingsService } from "@buf/srlmgr_api.bufbuild_es/backend/query/v1/bookings_pb";
 import { FrontendService } from "@buf/srlmgr_api.bufbuild_es/backend/query/v1/frontend_pb";
 import { QueryService } from "@buf/srlmgr_api.bufbuild_es/backend/query/v1/query_pb";
+import { StandingsService } from "@buf/srlmgr_api.bufbuild_es/backend/query/v1/standings_pb";
 
 let queryClient: ReturnType<typeof createClient<typeof QueryService>> | null =
 	null;
@@ -18,6 +19,9 @@ let importClient: ReturnType<typeof createClient<typeof ImportService>> | null =
 	null;
 let bookingsClient: ReturnType<
 	typeof createClient<typeof BookingsService>
+> | null = null;
+let standingsClient: ReturnType<
+	typeof createClient<typeof StandingsService>
 > | null = null;
 
 export function getQueryClient() {
@@ -53,4 +57,11 @@ export function getBookingsClient() {
 		bookingsClient = createClient(BookingsService, getTransport());
 	}
 	return bookingsClient;
+}
+
+export function getStandingsClient() {
+	if (!standingsClient) {
+		standingsClient = createClient(StandingsService, getTransport());
+	}
+	return standingsClient;
 }

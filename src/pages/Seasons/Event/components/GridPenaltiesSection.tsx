@@ -132,16 +132,8 @@ export function GridPenaltiesSection({
 					listSeasonTeams(seasonId),
 				]);
 			setBookingEntries(bookingResponse.items);
-			setDrivers(
-				bookingResponse.drivers.length > 0
-					? bookingResponse.drivers
-					: seasonDrivers.flatMap((item) => item.drivers),
-			);
-			setTeams(
-				bookingResponse.teams.length > 0
-					? bookingResponse.teams
-					: seasonTeams.flatMap((item) => item.teams),
-			);
+			setDrivers(seasonDrivers.flatMap((item) => item.drivers));
+			setTeams(seasonTeams.flatMap((item) => item.teams));
 		} catch (error) {
 			void message.error(`Failed to load penalties: ${String(error)}`);
 		} finally {
