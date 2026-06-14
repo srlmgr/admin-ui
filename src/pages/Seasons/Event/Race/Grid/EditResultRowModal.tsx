@@ -128,17 +128,7 @@ export function EditResultRowModal({
 
 				<Row gutter={8}>
 					<Col span={8}>
-						<Form.Item
-							label="Raw Driver"
-							name="rawDriverName"
-							rules={[
-								{
-									required: true,
-									whitespace: true,
-									message: "Driver name is required",
-								},
-							]}
-						>
+						<Form.Item label="Raw Driver" name="rawDriverName">
 							<Input />
 						</Form.Item>
 					</Col>

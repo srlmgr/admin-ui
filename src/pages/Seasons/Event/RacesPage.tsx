@@ -2,13 +2,16 @@ import {
 	computeBookingEntries,
 	createEventRacesAndGrids,
 	deleteRace,
-	getEventDriverStandings,
-	getEventTeamStandings,
+	getEventStandings,
 	listRaceGrids,
 	listRaces,
 	updateRaceName,
 } from "@/api/events";
-import { listSeasonEvents } from "@/api/seasons";
+import {
+	listSeasonDrivers,
+	listSeasonEvents,
+	listSeasonTeams,
+} from "@/api/seasons";
 import { SeasonEntityBreadcrumbs } from "@/pages/Seasons/components/SeasonEntityBreadcrumbs";
 import { SummarySection } from "@/pages/Seasons/Event/components/SummarySection";
 import {
@@ -20,13 +23,12 @@ import {
 	SettingOutlined,
 } from "@ant-design/icons";
 import {
-	type Driver,
-	type DriverStanding,
 	type Race,
 	type RaceGrid,
-	type Team,
-	type TeamStanding,
 } from "@buf/srlmgr_api.bufbuild_es/backend/common/v1/common_pb";
+import type { Standing } from "@buf/srlmgr_api.bufbuild_es/backend/query/v1/standings_pb";
+import type { Timestamp } from "@bufbuild/protobuf/wkt";
+import type { TableColumnsType, TabsProps } from "antd";
 import {
 	Button,
 	Card,
@@ -58,27 +60,93 @@ type EventLocationState = {
 	eventName?: string;
 };
 
-type DriverStandingRow = {
-	key: number;
+type StandingRow = {
+	key: string;
+	referenceId: number;
+	carClassId: number;
 	position: number;
+	previousPosition: number;
+	carNumber: string;
 	name: string;
+	carModelName: string;
 	totalPoints: number;
 	bonusPoints: number;
 	penaltyPoints: number;
+	numRaces: number;
 	numWins: number;
-	numPodiums: number;
+	numTop5: number;
+	numTop10: number;
 };
 
-type TeamStandingRow = {
-	key: number;
-	position: number;
+type ParticipantInfo = {
 	name: string;
-	totalPoints: number;
-	bonusPoints: number;
-	penaltyPoints: number;
-	numWins: number;
-	numPodiums: number;
+	carNumber: string;
+	carModelName: string;
 };
+
+type StandingTabDefinition = {
+	key: string;
+	label: string;
+	rows: StandingRow[];
+	isTeamTab: boolean;
+};
+
+function toTimestampSortValue(timestamp?: Timestamp): number {
+	if (!timestamp) {
+		return Number.MIN_SAFE_INTEGER;
+	}
+
+	return Number(timestamp.seconds ?? 0n);
+}
+
+function toTimestampComparableValue(timestamp?: Timestamp): bigint {
+	if (!timestamp) {
+		return 0n;
+	}
+
+	return (
+		(timestamp.seconds ?? 0n) * 1000000000n + BigInt(timestamp.nanos ?? 0)
+	);
+}
+
+function isWithinTimestampRange(
+	eventDate: Timestamp | undefined,
+	joinedAt?: Timestamp,
+	leftAt?: Timestamp,
+): boolean {
+	if (!eventDate) {
+		return true;
+	}
+
+	const eventValue = toTimestampComparableValue(eventDate);
+	const isLowerBoundaryFulfilled =
+		!joinedAt || eventValue >= toTimestampComparableValue(joinedAt);
+	const isUpperBoundaryFulfilled =
+		!leftAt || eventValue <= toTimestampComparableValue(leftAt);
+
+	return isLowerBoundaryFulfilled && isUpperBoundaryFulfilled;
+}
+
+function entryPreferenceKey(
+	leftAt?: Timestamp,
+	joinedAt?: Timestamp,
+	id = 0,
+): [number, number, number] {
+	return [leftAt ? 0 : 1, toTimestampSortValue(joinedAt), id];
+}
+
+function isCandidateBetter(
+	candidate: [number, number, number],
+	current: [number, number, number],
+): boolean {
+	if (candidate[0] !== current[0]) {
+		return candidate[0] > current[0];
+	}
+	if (candidate[1] !== current[1]) {
+		return candidate[1] > current[1];
+	}
+	return candidate[2] > current[2];
+}
 
 const { Title, Text } = Typography;
 
@@ -104,14 +172,23 @@ export function RacesPage() {
 	const [seriesName, setSeriesName] = useState<string>("");
 	const [seasonName, setSeasonName] = useState<string>("");
 	const [resolvedEventName, setResolvedEventName] = useState<string>("");
+	const [isSeasonTeamBased, setIsSeasonTeamBased] = useState(false);
+	const [isSeasonMulticlass, setIsSeasonMulticlass] = useState(false);
 	const [isStandingsLoading, setIsStandingsLoading] = useState(false);
-	const [driverStandings, setDriverStandings] = useState<DriverStanding[]>(
+	const [primaryStandings, setPrimaryStandings] = useState<Standing[]>([]);
+	const [secondaryStandings, setSecondaryStandings] = useState<Standing[]>(
 		[],
 	);
-	const [teamStandings, setTeamStandings] = useState<TeamStanding[]>([]);
-	const [drivers, setDrivers] = useState<Driver[]>([]);
-	const [teams, setTeams] = useState<Team[]>([]);
+	const [seasonDriverItems, setSeasonDriverItems] = useState<
+		Awaited<ReturnType<typeof listSeasonDrivers>>
+	>([]);
+	const [seasonTeamItems, setSeasonTeamItems] = useState<
+		Awaited<ReturnType<typeof listSeasonTeams>>
+	>([]);
 	const [summaryRefreshToken, setSummaryRefreshToken] = useState(0);
+	const [eventDate, setEventDate] = useState<Timestamp | undefined>(
+		undefined,
+	);
 
 	const isValidSeasonId = Number.isFinite(seasonId) && seasonId > 0;
 	const isValidEventId = Number.isFinite(eventId) && eventId > 0;
@@ -146,11 +223,16 @@ export function RacesPage() {
 			setSeasonName(
 				seasonEventsData.season?.name ?? `Season #${seasonId}`,
 			);
+			setIsSeasonTeamBased(seasonEventsData.season?.isTeamBased ?? false);
+			setIsSeasonMulticlass(
+				seasonEventsData.season?.isMulticlass ?? false,
+			);
 
 			const eventItem = seasonEventsData.events.find(
 				(item) => item.event?.id === eventId,
 			);
 			setResolvedEventName(eventItem?.event?.name ?? stateEventName);
+			setEventDate(eventItem?.event?.eventDate);
 		} catch (error) {
 			void message.error(`Failed to load races: ${String(error)}`);
 		} finally {
@@ -159,28 +241,29 @@ export function RacesPage() {
 	}, [eventId, isValidEventId, isValidSeasonId, seasonId, stateEventName]);
 
 	const loadStandings = useCallback(async () => {
-		if (!isValidEventId) {
+		if (!isValidEventId || !isValidSeasonId) {
 			return;
 		}
 
 		setIsStandingsLoading(true);
 		try {
-			const [driverStandingsResponse, teamStandingsResponse] =
+			const [standingsResponse, driversResponse, teamsResponse] =
 				await Promise.all([
-					getEventDriverStandings(eventId),
-					getEventTeamStandings(eventId),
+					getEventStandings(eventId),
+					listSeasonDrivers(seasonId),
+					listSeasonTeams(seasonId),
 				]);
 
-			setDriverStandings(driverStandingsResponse.standings);
-			setTeamStandings(teamStandingsResponse.standings);
-			setDrivers(driverStandingsResponse.drivers);
-			setTeams(teamStandingsResponse.teams);
+			setPrimaryStandings(standingsResponse.primaryStandings);
+			setSecondaryStandings(standingsResponse.secondaryStandings);
+			setSeasonDriverItems(driversResponse);
+			setSeasonTeamItems(teamsResponse);
 		} catch (error) {
 			void message.error(`Failed to load standings: ${String(error)}`);
 		} finally {
 			setIsStandingsLoading(false);
 		}
-	}, [eventId, isValidEventId]);
+	}, [eventId, isValidEventId, isValidSeasonId, seasonId]);
 
 	useEffect(() => {
 		const timeoutId = window.setTimeout(() => {
@@ -198,55 +281,459 @@ export function RacesPage() {
 		[races],
 	);
 
-	const driverStandingRows = useMemo<DriverStandingRow[]>(() => {
-		const driverNamesById = new Map(
-			drivers.map((driver) => [driver.id, driver.name]),
-		);
+	const driverInfoById = useMemo(() => {
+		const namesById = new Map<number, string>();
+		const preferredSeasonDriverInDateRangeByDriverId = new Map<
+			number,
+			{
+				carModelId: number;
+				carNumber: string;
+				comparison: [number, number, number];
+			}
+		>();
+		const preferredSeasonDriverByDriverId = new Map<
+			number,
+			{
+				carModelId: number;
+				carNumber: string;
+				comparison: [number, number, number];
+			}
+		>();
+		const carModelNameById = new Map<number, string>();
 
-		return [...driverStandings]
-			.sort(
-				(a, b) =>
-					(a.data?.position ?? Number.MAX_SAFE_INTEGER) -
-					(b.data?.position ?? Number.MAX_SAFE_INTEGER),
-			)
-			.map((standing) => ({
-				key: standing.driverId,
-				position: standing.data?.position ?? 0,
-				name:
-					driverNamesById.get(standing.driverId) ??
-					`Driver #${standing.driverId}`,
-				totalPoints: standing.data?.totalPoints ?? 0,
-				bonusPoints: standing.data?.bonusPoints ?? 0,
-				penaltyPoints: standing.data?.penaltyPoints ?? 0,
-				numWins: standing.data?.numWins ?? 0,
-				numPodiums: standing.data?.numPodiums ?? 0,
-			}));
-	}, [driverStandings, drivers]);
+		seasonDriverItems.forEach((item) => {
+			item.drivers.forEach((driver) => {
+				namesById.set(
+					driver.id,
+					driver.name.trim() || `Driver #${driver.id}`,
+				);
+			});
 
-	const teamStandingRows = useMemo<TeamStandingRow[]>(() => {
-		const teamNamesById = new Map(
-			teams.map((team) => [team.id, team.name]),
-		);
+			item.carData.forEach((carDataItem) => {
+				const carModelId = carDataItem.carModel?.id;
+				if (!carModelId) {
+					return;
+				}
+				carModelNameById.set(
+					carModelId,
+					carDataItem.carModel?.name.trim() ||
+						`Car model #${carModelId}`,
+				);
+			});
 
-		return [...teamStandings]
-			.sort(
-				(a, b) =>
-					(a.data?.position ?? Number.MAX_SAFE_INTEGER) -
-					(b.data?.position ?? Number.MAX_SAFE_INTEGER),
-			)
-			.map((standing) => ({
-				key: standing.teamId,
-				position: standing.data?.position ?? 0,
-				name:
-					teamNamesById.get(standing.teamId) ??
-					`Team #${standing.teamId}`,
-				totalPoints: standing.data?.totalPoints ?? 0,
-				bonusPoints: standing.data?.bonusPoints ?? 0,
-				penaltyPoints: standing.data?.penaltyPoints ?? 0,
-				numWins: standing.data?.numWins ?? 0,
-				numPodiums: standing.data?.numPodiums ?? 0,
-			}));
-	}, [teamStandings, teams]);
+			item.seasonDrivers.forEach((seasonDriver) => {
+				const nextComparison = entryPreferenceKey(
+					seasonDriver.leftAt,
+					seasonDriver.joinedAt,
+					seasonDriver.id,
+				);
+
+				const currentInDateRange =
+					preferredSeasonDriverInDateRangeByDriverId.get(
+						seasonDriver.driverId,
+					);
+				if (
+					isWithinTimestampRange(
+						eventDate,
+						seasonDriver.joinedAt,
+						seasonDriver.leftAt,
+					) &&
+					(!currentInDateRange ||
+						isCandidateBetter(
+							nextComparison,
+							currentInDateRange.comparison,
+						))
+				) {
+					preferredSeasonDriverInDateRangeByDriverId.set(
+						seasonDriver.driverId,
+						{
+							carModelId: seasonDriver.carModelId,
+							carNumber: seasonDriver.carNumber.trim() || "-",
+							comparison: nextComparison,
+						},
+					);
+				}
+
+				const current = preferredSeasonDriverByDriverId.get(
+					seasonDriver.driverId,
+				);
+				if (
+					!current ||
+					isCandidateBetter(nextComparison, current.comparison)
+				) {
+					preferredSeasonDriverByDriverId.set(seasonDriver.driverId, {
+						carModelId: seasonDriver.carModelId,
+						carNumber: seasonDriver.carNumber.trim() || "-",
+						comparison: nextComparison,
+					});
+				}
+			});
+		});
+
+		const infoById = new Map<number, ParticipantInfo>();
+		namesById.forEach((name, id) => {
+			const preferred =
+				preferredSeasonDriverInDateRangeByDriverId.get(id) ??
+				preferredSeasonDriverByDriverId.get(id);
+			const carModelName = preferred
+				? (carModelNameById.get(preferred.carModelId) ??
+					`Car model #${preferred.carModelId}`)
+				: "-";
+
+			infoById.set(id, {
+				name,
+				carNumber: preferred?.carNumber || "-",
+				carModelName,
+			});
+		});
+
+		return infoById;
+	}, [eventDate, seasonDriverItems]);
+
+	const teamInfoById = useMemo(() => {
+		const namesById = new Map<number, string>();
+		const preferredTeamByTeamId = new Map<
+			number,
+			{
+				carModelId: number;
+				carNumber: string;
+				comparison: [number, number, number];
+			}
+		>();
+		const carModelNameById = new Map<number, string>();
+
+		seasonTeamItems.forEach((item) => {
+			item.carData.forEach((carDataItem) => {
+				const carModelId = carDataItem.carModel?.id;
+				if (!carModelId) {
+					return;
+				}
+				carModelNameById.set(
+					carModelId,
+					carDataItem.carModel?.name.trim() ||
+						`Car model #${carModelId}`,
+				);
+			});
+
+			item.teams.forEach((team) => {
+				namesById.set(team.id, team.name.trim() || `Team #${team.id}`);
+
+				const nextComparison = entryPreferenceKey(
+					team.leftAt,
+					team.joinedAt,
+					team.id,
+				);
+
+				const current = preferredTeamByTeamId.get(team.id);
+				if (
+					!current ||
+					isCandidateBetter(nextComparison, current.comparison)
+				) {
+					preferredTeamByTeamId.set(team.id, {
+						carModelId: team.carModelId,
+						carNumber: team.carNumber.trim() || "-",
+						comparison: nextComparison,
+					});
+				}
+			});
+		});
+
+		const infoById = new Map<number, ParticipantInfo>();
+		namesById.forEach((name, id) => {
+			const preferred = preferredTeamByTeamId.get(id);
+			const carModelName = preferred?.carModelId
+				? (carModelNameById.get(preferred.carModelId) ??
+					`Car model #${preferred.carModelId}`)
+				: "-";
+
+			infoById.set(id, {
+				name,
+				carNumber: preferred?.carNumber || "-",
+				carModelName,
+			});
+		});
+
+		return infoById;
+	}, [seasonTeamItems]);
+
+	const toStandingRows = useCallback(
+		(
+			standings: Standing[],
+			participantInfoById: Map<number, ParticipantInfo>,
+			fallbackPrefix: string,
+		): StandingRow[] =>
+			[...standings]
+				.sort((a, b) => {
+					const byPosition =
+						(a.data?.position ?? Number.MAX_SAFE_INTEGER) -
+						(b.data?.position ?? Number.MAX_SAFE_INTEGER);
+					if (byPosition !== 0) {
+						return byPosition;
+					}
+					return a.referenceId - b.referenceId;
+				})
+				.map((standing) => {
+					const info = participantInfoById.get(standing.referenceId);
+					const name =
+						info?.name ??
+						`${fallbackPrefix} #${standing.referenceId}`;
+
+					return {
+						key: `${standing.referenceId}-${standing.carClassId}`,
+						referenceId: standing.referenceId,
+						carClassId: standing.carClassId,
+						position: standing.data?.position ?? 0,
+						previousPosition: standing.data?.prevPosition ?? 0,
+						carNumber: info?.carNumber ?? "-",
+						name,
+						carModelName: info?.carModelName ?? "-",
+						totalPoints: standing.data?.totalPoints ?? 0,
+						bonusPoints: standing.data?.bonusPoints ?? 0,
+						penaltyPoints: standing.data?.penaltyPoints ?? 0,
+						numRaces: standing.data?.numRaces ?? 0,
+						numWins: standing.data?.numWins ?? 0,
+						numTop5: standing.data?.numTop5 ?? 0,
+						numTop10: standing.data?.numTop10 ?? 0,
+					};
+				}),
+		[],
+	);
+
+	const driverStandingRows = useMemo(
+		() =>
+			toStandingRows(
+				isSeasonTeamBased ? secondaryStandings : primaryStandings,
+				driverInfoById,
+				"Driver",
+			),
+		[
+			driverInfoById,
+			isSeasonTeamBased,
+			primaryStandings,
+			secondaryStandings,
+			toStandingRows,
+		],
+	);
+
+	const teamStandingRows = useMemo(
+		() =>
+			toStandingRows(
+				isSeasonTeamBased ? primaryStandings : secondaryStandings,
+				teamInfoById,
+				"Team",
+			),
+		[
+			isSeasonTeamBased,
+			primaryStandings,
+			secondaryStandings,
+			teamInfoById,
+			toStandingRows,
+		],
+	);
+
+	const fullStandingColumns = useMemo<TableColumnsType<StandingRow>>(
+		() => [
+			{
+				title: "Pos",
+				dataIndex: "position",
+				key: "position",
+				width: 20,
+			},
+			{
+				title: "Prev",
+				dataIndex: "previousPosition",
+				key: "previousPosition",
+				width: 20,
+			},
+			{
+				title: "#",
+				dataIndex: "carNumber",
+				key: "carNumber",
+				// width: 110,
+			},
+			{
+				title: "Name",
+				dataIndex: "name",
+				key: "name",
+			},
+			{
+				title: "Car",
+				dataIndex: "carModelName",
+				key: "carModelName",
+			},
+			{
+				title: "Total",
+				dataIndex: "totalPoints",
+				key: "totalPoints",
+				align: "right",
+				width: 20,
+			},
+			{
+				title: "Penalties",
+				dataIndex: "penaltyPoints",
+				key: "penaltyPoints",
+				align: "right",
+				width: 20,
+			},
+			{
+				title: "Bonus",
+				dataIndex: "bonusPoints",
+				key: "bonusPoints",
+				align: "right",
+				width: 20,
+			},
+			{
+				title: "Races",
+				dataIndex: "numRaces",
+				key: "numRaces",
+				align: "right",
+				width: 20,
+			},
+			{
+				title: "Wins",
+				dataIndex: "numWins",
+				key: "numWins",
+				align: "right",
+				width: 20,
+			},
+			{
+				title: "T5",
+				dataIndex: "numTop5",
+				key: "numTop5",
+				align: "right",
+				width: 20,
+			},
+			{
+				title: "T10",
+				dataIndex: "numTop10",
+				key: "numTop10",
+				align: "right",
+				width: 20,
+			},
+		],
+		[],
+	);
+
+	const compactTeamColumns = useMemo<TableColumnsType<StandingRow>>(
+		() => [
+			{
+				title: "Pos",
+				dataIndex: "position",
+				key: "position",
+				width: 90,
+			},
+			{
+				title: "Prev",
+				dataIndex: "previousPosition",
+				key: "previousPosition",
+				width: 150,
+			},
+			{
+				title: "Name",
+				dataIndex: "name",
+				key: "name",
+			},
+			{
+				title: "Total",
+				dataIndex: "totalPoints",
+				key: "totalPoints",
+				align: "right",
+				width: 120,
+			},
+		],
+		[],
+	);
+
+	const standingsTabItems = useMemo<TabsProps["items"]>(() => {
+		const primaryLabel = isSeasonTeamBased ? "Teams" : "Drivers";
+		const secondaryLabel = isSeasonTeamBased ? "Drivers" : "Teams";
+
+		const classIds =
+			isSeasonMulticlass &&
+			(primaryStandings.length > 0 || secondaryStandings.length > 0)
+				? Array.from(
+						new Set([
+							...primaryStandings.map((item) => item.carClassId),
+							...secondaryStandings.map(
+								(item) => item.carClassId,
+							),
+						]),
+					).sort((a, b) => a - b)
+				: [];
+
+		const tabDefinitions: StandingTabDefinition[] = [];
+		if (isSeasonMulticlass && classIds.length > 0) {
+			classIds.forEach((carClassId) => {
+				tabDefinitions.push({
+					key: `primary-${carClassId}`,
+					label: `${primaryLabel} (Class ${carClassId})`,
+					rows: (isSeasonTeamBased
+						? teamStandingRows
+						: driverStandingRows
+					).filter((row) => row.carClassId === carClassId),
+					isTeamTab: isSeasonTeamBased,
+				});
+
+				tabDefinitions.push({
+					key: `secondary-${carClassId}`,
+					label: `${secondaryLabel} (Class ${carClassId})`,
+					rows: (isSeasonTeamBased
+						? driverStandingRows
+						: teamStandingRows
+					).filter((row) => row.carClassId === carClassId),
+					isTeamTab: !isSeasonTeamBased,
+				});
+			});
+		} else {
+			tabDefinitions.push({
+				key: "primary",
+				label: primaryLabel,
+				rows: isSeasonTeamBased ? teamStandingRows : driverStandingRows,
+				isTeamTab: isSeasonTeamBased,
+			});
+			tabDefinitions.push({
+				key: "secondary",
+				label: secondaryLabel,
+				rows: isSeasonTeamBased ? driverStandingRows : teamStandingRows,
+				isTeamTab: !isSeasonTeamBased,
+			});
+		}
+
+		return tabDefinitions.map((tab) => {
+			const isCompactTeamTab = tab.isTeamTab && !isSeasonTeamBased;
+			const columns = isCompactTeamTab
+				? compactTeamColumns
+				: fullStandingColumns;
+
+			return {
+				key: tab.key,
+				label: tab.label,
+				children: (
+					<Table<StandingRow>
+						size="small"
+						rowKey={(row) => row.key}
+						loading={isStandingsLoading}
+						dataSource={tab.rows}
+						pagination={false}
+						columns={columns}
+						locale={{
+							emptyText: `No ${String(tab.label).toLowerCase()} standings`,
+						}}
+					/>
+				),
+			};
+		});
+	}, [
+		compactTeamColumns,
+		driverStandingRows,
+		fullStandingColumns,
+		isSeasonMulticlass,
+		isSeasonTeamBased,
+		isStandingsLoading,
+		primaryStandings,
+		secondaryStandings,
+		teamStandingRows,
+	]);
 
 	const handleDeleteRace = useCallback(
 		async (raceId: number) => {
@@ -513,135 +1000,8 @@ export function RacesPage() {
 						),
 						children: (
 							<Tabs
-								defaultActiveKey="drivers"
-								items={[
-									{
-										key: "drivers",
-										label: "Drivers",
-										children: (
-											<Table<DriverStandingRow>
-												size="small"
-												rowKey={(row) => row.key}
-												loading={isStandingsLoading}
-												dataSource={driverStandingRows}
-												pagination={false}
-												columns={[
-													{
-														title: "Pos",
-														dataIndex: "position",
-														key: "position",
-														width: 80,
-													},
-													{
-														title: "Name",
-														dataIndex: "name",
-														key: "name",
-													},
-													{
-														title: "Bonus",
-														dataIndex:
-															"bonusPoints",
-														key: "bonusPoints",
-														align: "right",
-													},
-													{
-														title: "Penalty",
-														dataIndex:
-															"penaltyPoints",
-														key: "penaltyPoints",
-														align: "right",
-													},
-													{
-														title: "Wins",
-														dataIndex: "numWins",
-														key: "numWins",
-														align: "right",
-													},
-													{
-														title: "Podiums",
-														dataIndex: "numPodiums",
-														key: "numPodiums",
-														align: "right",
-													},
-													{
-														title: "Total",
-														dataIndex:
-															"totalPoints",
-														key: "totalPoints",
-														align: "right",
-													},
-												]}
-												locale={{
-													emptyText:
-														"No driver standings",
-												}}
-											/>
-										),
-									},
-									{
-										key: "teams",
-										label: "Teams",
-										children: (
-											<Table<TeamStandingRow>
-												size="small"
-												rowKey={(row) => row.key}
-												loading={isStandingsLoading}
-												dataSource={teamStandingRows}
-												pagination={false}
-												columns={[
-													{
-														title: "Pos",
-														dataIndex: "position",
-														key: "position",
-														width: 80,
-													},
-													{
-														title: "Name",
-														dataIndex: "name",
-														key: "name",
-													},
-													{
-														title: "Bonus",
-														dataIndex:
-															"bonusPoints",
-														key: "bonusPoints",
-														align: "right",
-													},
-													{
-														title: "Penalty",
-														dataIndex:
-															"penaltyPoints",
-														key: "penaltyPoints",
-														align: "right",
-													},
-													{
-														title: "Wins",
-														dataIndex: "numWins",
-														key: "numWins",
-														align: "right",
-													},
-													{
-														title: "Podiums",
-														dataIndex: "numPodiums",
-														key: "numPodiums",
-														align: "right",
-													},
-													{
-														title: "Total",
-														dataIndex:
-															"totalPoints",
-														key: "totalPoints",
-														align: "right",
-													},
-												]}
-												locale={{
-													emptyText:
-														"No team standings",
-												}}
-											/>
-										),
-									},
-								]}
+								defaultActiveKey={standingsTabItems?.[0]?.key}
+								items={standingsTabItems}
 							/>
 						),
 					},

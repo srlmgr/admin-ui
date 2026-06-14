@@ -2,6 +2,7 @@ import {
 	getCommandClient,
 	getImportClient,
 	getQueryClient,
+	getStandingsClient,
 } from "@/api/grpcClients";
 import { getConfig } from "@/config";
 import {
@@ -17,11 +18,8 @@ import {
 	type DeletePenaltyRequest,
 	type PenaltyTarget,
 } from "@buf/srlmgr_api.bufbuild_es/backend/import/v1/import_pb";
-import type {
-	GetDriverStandingsResponse,
-	GetSummaryResponse,
-	GetTeamStandingsResponse,
-} from "@buf/srlmgr_api.bufbuild_es/backend/query/v1/query_pb";
+import type { GetSummaryResponse } from "@buf/srlmgr_api.bufbuild_es/backend/query/v1/query_pb";
+import type { GetStandingsResponse } from "@buf/srlmgr_api.bufbuild_es/backend/query/v1/standings_pb";
 
 export async function listRaces(eventId: number): Promise<Race[]> {
 	const response = await getQueryClient().listRaces({ eventId });
@@ -57,16 +55,10 @@ export async function getRaceSummary(
 	});
 }
 
-export async function getEventDriverStandings(
+export async function getEventStandings(
 	eventId: number,
-): Promise<GetDriverStandingsResponse> {
-	return getQueryClient().getDriverStandings({ eventId });
-}
-
-export async function getEventTeamStandings(
-	eventId: number,
-): Promise<GetTeamStandingsResponse> {
-	return getQueryClient().getTeamStandings({ eventId });
+): Promise<GetStandingsResponse> {
+	return getStandingsClient().getStandings({ eventId });
 }
 
 export async function deleteRace(raceId: number): Promise<void> {
