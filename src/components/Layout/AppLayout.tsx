@@ -2,6 +2,7 @@ import { RootState } from "@/store";
 import { clearUser } from "@/store/slices/authSlice";
 import {
 	ApartmentOutlined,
+	AppstoreOutlined,
 	CalendarOutlined,
 	CarOutlined,
 	EnvironmentOutlined,
@@ -31,6 +32,7 @@ const menuItems = [
 	},
 	{ key: "tracks", icon: <EnvironmentOutlined />, label: "Tracks" },
 	{ key: "cars", icon: <CarOutlined />, label: "Cars" },
+	{ key: "car-classes", icon: <AppstoreOutlined />, label: "Car Classes" },
 ];
 
 export function AppLayout() {
