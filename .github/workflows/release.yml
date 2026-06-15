@@ -16,6 +16,34 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        
+      - name: Use Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: "pnpm"
+      - name: Prep npm for using packages from buf.build
+        run: |
+          pnpm config set @buf:registry  https://buf.build/gen/npm/v1/
+      - name: Install dependencies
+        run: pnpm install
+      - name: Test
+        run: pnpm test:no-watch --passWithNoTests
+        env:
+          CI: true
+          RUN_SLOW_TESTS: true
+      - name: Build      
+        run: pnpm build
+        env:
+          CI: false
+          VITE_APP_VERSION: "${{ github.ref_name }}"
+          
+      - name: Copy to docker
+        run: cp -r dist/ docker/dist
+
+
       - name: setup qemu for docker
         uses: docker/setup-qemu-action@v4
       - name: Setup docker buildx

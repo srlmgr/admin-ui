@@ -1,3 +1,4 @@
+# This is a multi-stage Dockerfile for building and serving the admin UI of SimRacing League Manager.
 # ---- Build stage ----
 FROM node:24-alpine AS builder
 

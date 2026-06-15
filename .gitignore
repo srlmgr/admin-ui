@@ -10,6 +10,9 @@ node_modules/
 # Build output
 dist/
 dist-ssr/
+/build
+/docker/build
+/docker/dist
 
 # Local env files
 .env

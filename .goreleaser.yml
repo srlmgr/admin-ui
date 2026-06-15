@@ -30,12 +30,11 @@ dockers_v2:
     platforms:
       - linux/amd64
     sbom: true
-    dockerfile: Dockerfile
+    dockerfile: docker/Dockerfile
     extra_files:
-      - nginx.conf
-      - package.json
-      - pnpm-lock.yaml
-      - pnpm-workspace.yaml
+      - docker/nginx.conf
+      - docker/dist
+      
     build_args:
       VITE_APP_VERSION: "{{ .Tag }}"
       VITE_GIT_SHA: "{{ .FullCommit }}"
