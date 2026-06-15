@@ -1,3 +1,4 @@
+import { getConfig } from "@/config";
 import { RootState } from "@/store";
 import { setError, setLoading } from "@/store/slices/authSlice";
 import { LoginOutlined } from "@ant-design/icons";
@@ -13,7 +14,7 @@ export function LoginPage() {
 	const { isLoading, error, user } = useSelector(
 		(state: RootState) => state.auth,
 	);
-
+	const config = getConfig();
 	// Clear any lingering error on component mount
 	useEffect(() => {
 		dispatch(setError(""));
@@ -31,7 +32,7 @@ export function LoginPage() {
 		});
 
 		// Use full-page navigation so backend OAuth redirects are handled by the browser.
-		window.location.assign(`/api/login?${params.toString()}`);
+		window.location.assign(`${config.apiUrl}/login?${params.toString()}`);
 	};
 
 	// Safety check: if somehow user is logged in, redirect
