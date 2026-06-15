@@ -14,12 +14,16 @@ import {
 } from "@buf/srlmgr_api.bufbuild_es/backend/common/v1/common_pb";
 import type { GetPreprocessPreviewResponse } from "@buf/srlmgr_api.bufbuild_es/backend/import/v1/import_pb";
 import {
+	AddPenaltyRequestSchema,
+	DeletePenaltyRequestSchema,
+	PenaltyTargetSchema,
 	type AddPenaltyRequest,
 	type DeletePenaltyRequest,
 	type PenaltyTarget,
 } from "@buf/srlmgr_api.bufbuild_es/backend/import/v1/import_pb";
 import type { GetSummaryResponse } from "@buf/srlmgr_api.bufbuild_es/backend/query/v1/query_pb";
 import type { GetStandingsResponse } from "@buf/srlmgr_api.bufbuild_es/backend/query/v1/standings_pb";
+import { create } from "@bufbuild/protobuf";
 
 export async function listRaces(eventId: number): Promise<Race[]> {
 	const response = await getQueryClient().listRaces({ eventId });
@@ -179,24 +183,24 @@ export type AddPenaltyInput = {
 };
 
 export async function addPenalty(input: AddPenaltyInput): Promise<void> {
-	const target: PenaltyTarget = {
+	const target: PenaltyTarget = create(PenaltyTargetSchema, {
 		scope: input.scope,
 		target: input.target,
-	};
+	});
 
-	const payload: AddPenaltyRequest = {
+	const payload: AddPenaltyRequest = create(AddPenaltyRequestSchema, {
 		target,
 		penaltyPoints: input.penaltyPoints,
 		reason: input.reason,
-	};
+	});
 
 	await getImportClient().addPenalty(payload);
 }
 
 export async function deletePenalty(penaltyId: number): Promise<void> {
-	const payload: DeletePenaltyRequest = {
+	const payload: DeletePenaltyRequest = create(DeletePenaltyRequestSchema, {
 		penaltyId,
-	};
+	});
 
 	await getImportClient().deletePenalty(payload);
 }

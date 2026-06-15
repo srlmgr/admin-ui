@@ -1,3 +1,4 @@
+import { getConfig } from "@/config";
 import type { User } from "@/store/slices/authSlice";
 
 export interface CurrentUserResult {
@@ -14,7 +15,8 @@ interface CurrentUserResponse {
 }
 
 export async function fetchCurrentUser(): Promise<CurrentUserResult> {
-	const response = await fetch("/api/currentuser", {
+	const config = getConfig();
+	const response = await fetch(`${config.apiUrl}/currentuser`, {
 		method: "GET",
 		credentials: "include",
 	});

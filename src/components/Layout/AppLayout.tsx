@@ -2,6 +2,7 @@ import { RootState } from "@/store";
 import { clearUser } from "@/store/slices/authSlice";
 import {
 	ApartmentOutlined,
+	AppstoreOutlined,
 	CalendarOutlined,
 	CarOutlined,
 	EnvironmentOutlined,
@@ -31,6 +32,7 @@ const menuItems = [
 	},
 	{ key: "tracks", icon: <EnvironmentOutlined />, label: "Tracks" },
 	{ key: "cars", icon: <CarOutlined />, label: "Cars" },
+	{ key: "car-classes", icon: <AppstoreOutlined />, label: "Car Classes" },
 ];
 
 export function AppLayout() {
@@ -76,13 +78,30 @@ export function AppLayout() {
 			>
 				<div
 					style={{
-						color: "white",
-						fontSize: "18px",
-						fontWeight: "bold",
+						display: "flex",
+						flexDirection: "column",
 						whiteSpace: "nowrap",
 					}}
 				>
-					Admin Dashboard
+					<span
+						style={{
+							color: "white",
+							fontSize: "18px",
+							fontWeight: "bold",
+							lineHeight: "1.2",
+						}}
+					>
+						Admin Dashboard
+					</span>
+					<span
+						style={{
+							color: "rgba(255,255,255,0.55)",
+							fontSize: "11px",
+							lineHeight: "1.2",
+						}}
+					>
+						{import.meta.env.VITE_APP_VERSION ?? "dev"}
+					</span>
 				</div>
 				<Menu
 					theme="dark"

@@ -2,6 +2,8 @@ import { GridPage } from "@/pages/Seasons/Event/Race/Grid/GridPage";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { AppLayout } from "../components/Layout/AppLayout";
 import { CallbackPage } from "../pages/Callback/CallbackPage";
+import { CarClassesPage } from "../pages/CarClasses/CarClassesPage";
+import { CarClassManagePage } from "../pages/CarClasses/ManagePage";
 import { CarsPage } from "../pages/Cars/CarsPage";
 import { CarManagePage } from "../pages/Cars/ManagePage";
 import { DriversPage } from "../pages/Drivers/DriversPage";
@@ -82,6 +84,8 @@ export const router = createBrowserRouter([
 			},
 			{ path: "cars", element: <CarsPage /> },
 			{ path: "cars/manage", element: <CarManagePage /> },
+			{ path: "car-classes", element: <CarClassesPage /> },
+			{ path: "car-classes/manage", element: <CarClassManagePage /> },
 		],
 	},
 	{
