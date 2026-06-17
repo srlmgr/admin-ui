@@ -1,5 +1,6 @@
 import { RootState } from "@/store";
 import { clearUser } from "@/store/slices/authSlice";
+import { useThemeMode } from "@/theme/themeMode";
 import {
 	ApartmentOutlined,
 	AppstoreOutlined,
@@ -8,11 +9,22 @@ import {
 	EnvironmentOutlined,
 	ExperimentOutlined,
 	LogoutOutlined,
+	MoonOutlined,
+	SunOutlined,
 	TeamOutlined,
 	TrophyOutlined,
 	UserOutlined,
 } from "@ant-design/icons";
-import { Button, Layout, Menu, Space, theme, Typography } from "antd";
+import {
+	Button,
+	Layout,
+	Menu,
+	Space,
+	Switch,
+	theme,
+	Tooltip,
+	Typography,
+} from "antd";
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 
@@ -39,6 +51,8 @@ export function AppLayout() {
 	const dispatch = useDispatch();
 	const navigate = useNavigate();
 	const location = useLocation();
+	const { mode, toggleMode } = useThemeMode();
+	const isDarkMode = mode === "dark";
 	const user = useSelector((state: RootState) => state.auth.user);
 	const {
 		token: { colorBgContainer, borderRadiusLG },
@@ -50,6 +64,11 @@ export function AppLayout() {
 	}
 
 	const selectedKey = location.pathname.split("/")[1] || "users";
+	const headerTextColor = isDarkMode ? "white" : "rgba(0,0,0,0.88)";
+	const headerSubTextColor = isDarkMode
+		? "rgba(255,255,255,0.55)"
+		: "rgba(0,0,0,0.45)";
+	const headerControlColor = isDarkMode ? "white" : "rgba(0,0,0,0.88)";
 
 	const handleLogout = async () => {
 		try {
@@ -74,6 +93,7 @@ export function AppLayout() {
 					alignItems: "center",
 					justifyContent: "space-between",
 					padding: "0 24px",
+					background: isDarkMode ? undefined : colorBgContainer,
 				}}
 			>
 				<div
@@ -85,7 +105,7 @@ export function AppLayout() {
 				>
 					<span
 						style={{
-							color: "white",
+							color: headerTextColor,
 							fontSize: "18px",
 							fontWeight: "bold",
 							lineHeight: "1.2",
@@ -95,7 +115,7 @@ export function AppLayout() {
 					</span>
 					<span
 						style={{
-							color: "rgba(255,255,255,0.55)",
+							color: headerSubTextColor,
 							fontSize: "11px",
 							lineHeight: "1.2",
 						}}
@@ -104,7 +124,7 @@ export function AppLayout() {
 					</span>
 				</div>
 				<Menu
-					theme="dark"
+					theme={isDarkMode ? "dark" : "light"}
 					mode="horizontal"
 					selectedKeys={[selectedKey]}
 					items={menuItems}
@@ -112,14 +132,24 @@ export function AppLayout() {
 					style={{ flex: 1, minWidth: 0, marginLeft: "48px" }}
 				/>
 				<Space>
-					<Text style={{ color: "white" }}>
+					<Tooltip
+						title={`Switch to ${isDarkMode ? "light" : "dark"} mode`}
+					>
+						<Switch
+							checked={isDarkMode}
+							onChange={toggleMode}
+							checkedChildren={<MoonOutlined />}
+							unCheckedChildren={<SunOutlined />}
+						/>
+					</Tooltip>
+					<Text style={{ color: headerControlColor }}>
 						Welcome, {user.firstName ?? user.name}
 					</Text>
 					<Button
 						type="text"
 						icon={<LogoutOutlined />}
 						onClick={handleLogout}
-						style={{ color: "white" }}
+						style={{ color: headerControlColor }}
 					>
 						Logout
 					</Button>
@@ -128,6 +158,7 @@ export function AppLayout() {
 			<Layout>
 				<Sider width={200} style={{ background: colorBgContainer }}>
 					<Menu
+						theme={isDarkMode ? "dark" : "light"}
 						mode="inline"
 						selectedKeys={[selectedKey]}
 						style={{ height: "100%", borderRight: 0 }}
