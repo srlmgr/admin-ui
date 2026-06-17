@@ -1,6 +1,6 @@
 import { PlusOutlined } from "@ant-design/icons";
 import type { CarModel } from "@buf/srlmgr_api.bufbuild_es/backend/common/v1/common_pb";
-import { Button, Card, Empty, List, Spin, message } from "antd";
+import { Button, Card, Empty, List, message, Spin, theme } from "antd";
 import { useMemo } from "react";
 
 interface ModelListSectionProps {
@@ -20,6 +20,9 @@ export function ModelListSection({
 	onSelectModel,
 	onCreateClick,
 }: ModelListSectionProps) {
+	const {
+		token: { colorPrimaryBg },
+	} = theme.useToken();
 	const sortedModels = useMemo(
 		() => [...models].sort((a, b) => a.name.localeCompare(b.name)),
 		[models],
@@ -59,7 +62,7 @@ export function ModelListSection({
 									cursor: "pointer",
 									backgroundColor:
 										selectedModelId === item.id
-											? "#e6f7ff"
+											? colorPrimaryBg
 											: "transparent",
 									paddingInline: 8,
 									borderRadius: 6,

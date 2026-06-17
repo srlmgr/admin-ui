@@ -26,12 +26,22 @@ import {
 	Spin,
 	Tooltip,
 	message,
+	theme,
 } from "antd";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 export function TrackLayoutEditPage() {
 	const navigate = useNavigate();
+	const {
+		token: {
+			colorFillAlter,
+			colorPrimary,
+			colorPrimaryBg,
+			colorSplit,
+			colorTextSecondary,
+		},
+	} = theme.useToken();
 	const { trackId, layoutId } = useParams<{
 		trackId: string;
 		layoutId: string;
@@ -260,7 +270,7 @@ export function TrackLayoutEditPage() {
 								style={{
 									marginTop: "24px",
 									paddingTop: "24px",
-									borderTop: "1px solid #f0f0f0",
+									borderTop: `1px solid ${colorSplit}`,
 								}}
 							>
 								<h4
@@ -281,7 +291,7 @@ export function TrackLayoutEditPage() {
 								>
 									<div
 										style={{
-											borderRight: "1px solid #f0f0f0",
+											borderRight: `1px solid ${colorSplit}`,
 											paddingRight: "0",
 										}}
 									>
@@ -296,12 +306,12 @@ export function TrackLayoutEditPage() {
 														backgroundColor:
 															selectedSimulationId ===
 															sim.id
-																? "#e6f7ff"
+																? colorPrimaryBg
 																: "transparent",
 														borderLeft:
 															selectedSimulationId ===
 															sim.id
-																? "3px solid #1890ff"
+																? `3px solid ${colorPrimary}`
 																: "3px solid transparent",
 														paddingLeft: "13px",
 														margin: "0",
@@ -319,7 +329,7 @@ export function TrackLayoutEditPage() {
 															sim.id
 														) {
 															e.currentTarget.style.backgroundColor =
-																"#fafafa";
+																colorFillAlter;
 														}
 													}}
 													onMouseLeave={(e) => {
@@ -380,7 +390,7 @@ export function TrackLayoutEditPage() {
 													).length === 0 ? (
 														<p
 															style={{
-																color: "#8c8c8c",
+																color: colorTextSecondary,
 																fontStyle:
 																	"italic",
 															}}

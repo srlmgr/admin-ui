@@ -26,6 +26,7 @@ import {
 	Tooltip,
 	Typography,
 	message,
+	theme,
 } from "antd";
 import { useEffect, useMemo, useState } from "react";
 
@@ -77,6 +78,9 @@ export function ModelEditorSection({
 	onDeleted,
 }: ModelEditorSectionProps) {
 	const [form] = Form.useForm<ModelFormValues>();
+	const {
+		token: { colorPrimaryBg, colorSplit },
+	} = theme.useToken();
 	const [modelAliases, setModelAliases] = useState<Record<number, string[]>>(
 		createAliasState(simulations),
 	);
@@ -283,7 +287,7 @@ export function ModelEditorSection({
 							<div
 								style={{
 									marginTop: 24,
-									borderTop: "1px solid #f0f0f0",
+									borderTop: `1px solid ${colorSplit}`,
 									paddingTop: 24,
 								}}
 							>
@@ -305,7 +309,7 @@ export function ModelEditorSection({
 															backgroundColor:
 																selectedSimulationId ===
 																simulation.id
-																	? "#e6f7ff"
+																	? colorPrimaryBg
 																	: "transparent",
 															paddingInline: 8,
 															borderRadius: 6,
