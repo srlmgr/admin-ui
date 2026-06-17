@@ -38,6 +38,7 @@ import {
 	Tag,
 	Typography,
 	message,
+	theme,
 } from "antd";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -85,6 +86,9 @@ function toFormValues(
 
 export function DriversPage() {
 	const [form] = Form.useForm<DriverFormValues>();
+	const {
+		token: { colorBorder, colorFillAlter, colorPrimaryBg, colorSplit },
+	} = theme.useToken();
 	const [drivers, setDrivers] = useState<Driver[]>([]);
 	const [simulations, setSimulations] = useState<Simulation[]>([]);
 	const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -433,7 +437,7 @@ export function DriversPage() {
 										backgroundColor:
 											!isCreatingNew &&
 											driver.id === selectedId
-												? "#e6f4ff"
+												? colorPrimaryBg
 												: undefined,
 									},
 									onClick: () =>
@@ -587,7 +591,7 @@ export function DriversPage() {
 												>
 													<div
 														style={{
-															border: "1px solid #d9d9d9",
+															border: `1px solid ${colorBorder}`,
 															borderRadius: 8,
 															overflow: "hidden",
 														}}
@@ -599,11 +603,11 @@ export function DriversPage() {
 																padding:
 																	"10px 12px",
 																background:
-																	"#fafafa",
+																	colorFillAlter,
 																borderBottom:
 																	fields.length >
 																	0
-																		? "1px solid #f0f0f0"
+																		? `1px solid ${colorSplit}`
 																		: "none",
 															}}
 														>
@@ -683,7 +687,7 @@ export function DriversPage() {
 																			borderTop:
 																				index >
 																				0
-																					? "1px solid #f0f0f0"
+																					? `1px solid ${colorSplit}`
 																					: "none",
 																		}}
 																	>

@@ -32,6 +32,7 @@ import {
 	Switch,
 	Typography,
 	message,
+	theme,
 } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -59,6 +60,9 @@ function toFormValues(series: Series): SeriesFormValues {
 
 export function SeriesPage() {
 	const [form] = Form.useForm<SeriesFormValues>();
+	const {
+		token: { colorPrimaryBg },
+	} = theme.useToken();
 	const [simulations, setSimulations] = useState<Simulation[]>([]);
 	const [selectedSimulationId, setSelectedSimulationId] = useState<
 		number | null
@@ -385,7 +389,7 @@ export function SeriesPage() {
 													paddingInline: 12,
 													borderRadius: 6,
 													backgroundColor: isSelected
-														? "#e6f4ff"
+														? colorPrimaryBg
 														: "transparent",
 												}}
 												onClick={() =>

@@ -12,10 +12,11 @@ import {
 	Form,
 	Input,
 	List,
+	message,
 	Popconfirm,
 	Space,
 	Spin,
-	message,
+	theme,
 } from "antd";
 import { useEffect, useMemo } from "react";
 
@@ -47,6 +48,9 @@ export function ManufacturerSection({
 	onDeleted,
 }: ManufacturerSectionProps) {
 	const [form] = Form.useForm<ManufacturerFormValues>();
+	const {
+		token: { colorPrimaryBg },
+	} = theme.useToken();
 
 	const sortedManufacturers = useMemo(
 		() => [...manufacturers].sort((a, b) => a.name.localeCompare(b.name)),
@@ -147,7 +151,7 @@ export function ManufacturerSection({
 									cursor: "pointer",
 									backgroundColor:
 										selectedManufacturerId === item.id
-											? "#e6f7ff"
+											? colorPrimaryBg
 											: "transparent",
 									paddingInline: 8,
 									borderRadius: 6,

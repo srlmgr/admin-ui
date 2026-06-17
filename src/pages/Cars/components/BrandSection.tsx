@@ -8,10 +8,11 @@ import {
 	Form,
 	Input,
 	List,
+	message,
 	Popconfirm,
 	Space,
 	Spin,
-	message,
+	theme,
 } from "antd";
 import { useEffect, useMemo } from "react";
 
@@ -45,6 +46,9 @@ export function BrandSection({
 	onDeleted,
 }: BrandSectionProps) {
 	const [form] = Form.useForm<BrandFormValues>();
+	const {
+		token: { colorPrimaryBg },
+	} = theme.useToken();
 
 	const sortedBrands = useMemo(
 		() => [...brands].sort((a, b) => a.name.localeCompare(b.name)),
@@ -162,7 +166,7 @@ export function BrandSection({
 									cursor: "pointer",
 									backgroundColor:
 										selectedBrandId === item.id
-											? "#e6f7ff"
+											? colorPrimaryBg
 											: "transparent",
 									paddingInline: 8,
 									borderRadius: 6,

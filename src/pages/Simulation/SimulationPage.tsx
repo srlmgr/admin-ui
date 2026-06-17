@@ -29,6 +29,7 @@ import {
 	Switch,
 	Typography,
 	message,
+	theme,
 } from "antd";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -61,6 +62,9 @@ function toFormValues(simulation: Simulation): SimulationFormValues {
 
 export function SimulationPage() {
 	const [form] = Form.useForm<SimulationFormValues>();
+	const {
+		token: { colorBorder, colorFillAlter, colorPrimaryBg, colorSplit },
+	} = theme.useToken();
 	const [simulations, setSimulations] = useState<Simulation[]>([]);
 	const [selectedId, setSelectedId] = useState<number | null>(null);
 	const [isCreatingNew, setIsCreatingNew] = useState(false);
@@ -272,7 +276,7 @@ export function SimulationPage() {
 												paddingInline: 12,
 												borderRadius: 6,
 												backgroundColor: isSelected
-													? "#e6f4ff"
+													? colorPrimaryBg
 													: "transparent",
 											}}
 											onClick={() =>
@@ -364,7 +368,7 @@ export function SimulationPage() {
 												>
 													<div
 														style={{
-															border: "1px solid #d9d9d9",
+															border: `1px solid ${colorBorder}`,
 															borderRadius: 8,
 															overflow: "hidden",
 														}}
@@ -376,11 +380,11 @@ export function SimulationPage() {
 																padding:
 																	"10px 12px",
 																background:
-																	"#fafafa",
+																	colorFillAlter,
 																borderBottom:
 																	fields.length >
 																	0
-																		? "1px solid #f0f0f0"
+																		? `1px solid ${colorSplit}`
 																		: "none",
 															}}
 														>
@@ -460,7 +464,7 @@ export function SimulationPage() {
 																			borderTop:
 																				index >
 																				0
-																					? "1px solid #f0f0f0"
+																					? `1px solid ${colorSplit}`
 																					: "none",
 																		}}
 																	>
