@@ -3,7 +3,10 @@ import {
 	getFrontendClient,
 	getQueryClient,
 } from "@/api/grpcClients";
+import { SeasonCarModelsUpdateMode } from "@buf/srlmgr_api.bufbuild_es/backend/command/v1/command_pb";
 import type {
+	CarClass,
+	CarModel,
 	Event,
 	PointSystem,
 	Season,
@@ -147,6 +150,45 @@ export async function listSeasonTeams(
 ): Promise<SeasonTeamContainer[]> {
 	const response = await getFrontendClient().listSeasonTeams({ seasonId });
 	return response.items;
+}
+
+export async function listSeasonCarModels(
+	seasonId: number,
+): Promise<CarModel[]> {
+	const response = await getFrontendClient().listSeasonCarModels({
+		seasonId,
+	});
+	return response.items;
+}
+
+export async function listSeasonCarClasses(
+	seasonId: number,
+): Promise<CarClass[]> {
+	const response = await getFrontendClient().listSeasonCarClasses({
+		seasonId,
+	});
+	return response.items;
+}
+
+export async function setSeasonCarModels(
+	seasonId: number,
+	carModelIds: number[],
+): Promise<void> {
+	await getCommandClient().setSeasonCarModels({
+		seasonId,
+		carModelIds,
+	});
+}
+
+export async function setSeasonCarClasses(
+	seasonId: number,
+	carClassIds: number[],
+): Promise<void> {
+	await getCommandClient().setSeasonCarClasses({
+		seasonId,
+		carClassIds,
+		updateMode: SeasonCarModelsUpdateMode.REPLACE,
+	});
 }
 
 export type AddSeasonDriverInput = {

@@ -15,6 +15,8 @@ import { SeasonEditPage } from "../pages/Seasons/EditPage";
 import { RacePage } from "../pages/Seasons/Event/Race/RacePage";
 import { RacesPage } from "../pages/Seasons/Event/RacesPage";
 import { SeasonManagePage } from "../pages/Seasons/ManagePage";
+import { SeasonCarClassesPage } from "../pages/Seasons/SeasonCarClassesPage";
+import { SeasonCarModelsPage } from "../pages/Seasons/SeasonCarModelsPage";
 import { SeasonsPage } from "../pages/Seasons/SeasonsPage";
 import { SeriesPage } from "../pages/Series/SeriesPage";
 import { SimulationPage } from "../pages/Simulation/SimulationPage";
@@ -57,6 +59,14 @@ export const router = createBrowserRouter([
 			{ path: "seasons/new", element: <SeasonEditPage /> },
 			{ path: "seasons/:seasonId/edit", element: <SeasonEditPage /> },
 			{ path: "seasons/:seasonId/manage", element: <SeasonManagePage /> },
+			{
+				path: "seasons/:seasonId/cars",
+				element: <SeasonCarModelsPage />,
+			},
+			{
+				path: "seasons/:seasonId/car-classes",
+				element: <SeasonCarClassesPage />,
+			},
 			{
 				path: "seasons/:seasonId/events/:eventId",
 				element: <RacesPage />,
