@@ -1,6 +1,10 @@
-import { listAllCarModelOptions, type CarModelOption } from "@/api/cars";
+import type { CarModelOption } from "@/api/cars";
 import { listDrivers } from "@/api/drivers";
-import { setSeasonDrivers, type SeasonDriverEntry } from "@/api/seasons";
+import {
+	listSeasonCarModels,
+	setSeasonDrivers,
+	type SeasonDriverEntry,
+} from "@/api/seasons";
 import type { Driver } from "@buf/srlmgr_api.bufbuild_es/backend/common/v1/common_pb";
 import type { Timestamp } from "@bufbuild/protobuf/wkt";
 import { DatePicker, Form, Input, Modal, Select, Switch, message } from "antd";
@@ -72,18 +76,22 @@ export function SeasonDriverModal({
 	const loadOptions = useCallback(async () => {
 		setIsLoadingOptions(true);
 		try {
-			const [driverItems, carItems] = await Promise.all([
+			const [driverItems, carModelItems] = await Promise.all([
 				listDrivers(),
-				listAllCarModelOptions(),
+				listSeasonCarModels(seasonId),
 			]);
 			setDrivers(driverItems);
-			setCarModelOptions(carItems);
+			setCarModelOptions(
+				carModelItems
+					.map((m) => ({ carModelId: m.id, label: m.name }))
+					.sort((a, b) => a.label.localeCompare(b.label)),
+			);
 		} catch (error) {
 			void message.error(`Failed to load options: ${String(error)}`);
 		} finally {
 			setIsLoadingOptions(false);
 		}
-	}, []);
+	}, [seasonId]);
 
 	useEffect(() => {
 		if (!open) {

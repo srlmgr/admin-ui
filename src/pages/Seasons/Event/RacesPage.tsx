@@ -1,4 +1,4 @@
-import { listCarClassModels } from "@/api/carClasses";
+import { listCarClassModels, listCarClasses } from "@/api/carClasses";
 import {
 	computeBookingEntries,
 	createEventRacesAndGrids,
@@ -237,6 +237,9 @@ export function RacesPage() {
 	const [seasonTeamItems, setSeasonTeamItems] = useState<
 		Awaited<ReturnType<typeof listSeasonTeams>>
 	>([]);
+	const [carClassNamesById, setCarClassNamesById] = useState<
+		Map<number, string>
+	>(new Map());
 	const [summaryRefreshToken, setSummaryRefreshToken] = useState(0);
 	const [eventDate, setEventDate] = useState<Timestamp | undefined>(
 		undefined,
@@ -308,6 +311,7 @@ export function RacesPage() {
 					listSeasonDrivers(seasonId),
 					listSeasonTeams(seasonId),
 				]);
+			const carClassesResponse = await listCarClasses();
 
 			const carClassIds = Array.from(
 				new Set([
@@ -346,6 +350,14 @@ export function RacesPage() {
 			setSecondaryStandings(standingsResponse.secondaryStandings);
 			setSeasonDriverItems(driversResponse);
 			setSeasonTeamItems(teamsResponse);
+			setCarClassNamesById(
+				new Map(
+					carClassesResponse.map((item) => [
+						item.id,
+						item.name.trim() || `Car class #${item.id}`,
+					]),
+				),
+			);
 			setCarModelClassIdsByModelId(nextCarModelClassIdsByModelId);
 		} catch (error) {
 			void message.error(`Failed to load standings: ${String(error)}`);
@@ -710,9 +722,12 @@ export function RacesPage() {
 		const tabDefinitions: StandingTabDefinition[] = [];
 		if (isSeasonMulticlass && classIds.length > 0) {
 			classIds.forEach((carClassId) => {
+				const className =
+					carClassNamesById.get(carClassId) ??
+					`Car class #${carClassId}`;
 				tabDefinitions.push({
 					key: `primary-${carClassId}`,
-					label: `${primaryLabel} (Class ${carClassId})`,
+					label: `${primaryLabel} (${className})`,
 					rows: (isSeasonTeamBased
 						? teamStandingRows
 						: driverStandingRows
@@ -722,7 +737,7 @@ export function RacesPage() {
 
 				tabDefinitions.push({
 					key: `secondary-${carClassId}`,
-					label: `${secondaryLabel} (Class ${carClassId})`,
+					label: `${secondaryLabel} (${className})`,
 					rows: (isSeasonTeamBased
 						? driverStandingRows
 						: teamStandingRows
@@ -779,6 +794,7 @@ export function RacesPage() {
 		primaryStandings,
 		secondaryStandings,
 		teamStandingRows,
+		carClassNamesById,
 	]);
 
 	const handleDeleteRace = useCallback(
