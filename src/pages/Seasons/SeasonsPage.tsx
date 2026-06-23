@@ -176,6 +176,28 @@ export function SeasonsPage() {
 									>
 										Edit
 									</Button>
+									<Button
+										size="small"
+										onClick={() =>
+											navigate(
+												`/seasons/${row.season.id}/cars`,
+											)
+										}
+									>
+										Cars
+									</Button>
+									{row.season.isMulticlass && (
+										<Button
+											size="small"
+											onClick={() =>
+												navigate(
+													`/seasons/${row.season.id}/car-classes`,
+												)
+											}
+										>
+											Car classes
+										</Button>
+									)}
 								</Space>
 							),
 						},
