@@ -13,18 +13,18 @@
     "test:no-watch": "vitest run"
   },
   "dependencies": {
-    "@ant-design/icons": "^6.2.5",
+    "@ant-design/icons": "^6.3.1",
     "@buf/srlmgr_api.bufbuild_es": "2.12.0-20260621220505-8f705ff3f5a5.1",
-    "@bufbuild/protobuf": "^2.12.0",
+    "@bufbuild/protobuf": "^2.12.1",
     "@connectrpc/connect": "^2.1.2",
     "@connectrpc/connect-web": "^2.1.2",
     "@reduxjs/toolkit": "^2.12.0",
-    "antd": "^6.4.4",
+    "antd": "^6.4.5",
     "dayjs": "^1.11.21",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-redux": "^9.3.0",
-    "react-router-dom": "^7.17.0"
+    "react-router-dom": "^7.18.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
