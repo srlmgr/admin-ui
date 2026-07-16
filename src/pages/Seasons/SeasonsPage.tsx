@@ -3,6 +3,8 @@ import {
 	listSeasonsOverview,
 	type SeasonOverviewItem,
 } from "@/api/seasons";
+import { listSeries } from "@/api/series";
+import { listSimulations } from "@/api/simulations";
 import {
 	EditOutlined,
 	PlusOutlined,
@@ -10,7 +12,7 @@ import {
 	SettingOutlined,
 } from "@ant-design/icons";
 import { Button, Card, Select, Space, Table, Typography, message } from "antd";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const { Title } = Typography;
@@ -19,6 +21,10 @@ export function SeasonsPage() {
 	const navigate = useNavigate();
 	const [items, setItems] = useState<SeasonOverviewItem[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
+	const [isSeriesOptionsLoading, setIsSeriesOptionsLoading] = useState(false);
+	const [seriesOptions, setSeriesOptions] = useState<
+		Array<{ value: number; label: string }>
+	>([]);
 	const [selectedSeriesId, setSelectedSeriesId] = useState<number | null>(
 		null,
 	);
@@ -28,16 +34,6 @@ export function SeasonsPage() {
 		try {
 			const nextItems = await listSeasonsOverview();
 			setItems(nextItems);
-			setSelectedSeriesId((current) => {
-				const availableSeriesIds = new Set(
-					nextItems.map((entry) => entry.season.seriesId),
-				);
-				if (current !== null && availableSeriesIds.has(current)) {
-					return current;
-				}
-				const firstSeriesId = nextItems[0]?.season.seriesId;
-				return firstSeriesId ?? null;
-			});
 		} catch (error) {
 			void message.error(`Failed to load seasons: ${String(error)}`);
 		} finally {
@@ -45,27 +41,51 @@ export function SeasonsPage() {
 		}
 	}, []);
 
+	const loadSeriesOptions = useCallback(async () => {
+		setIsSeriesOptionsLoading(true);
+		try {
+			const simulations = await listSimulations();
+			const seriesBySimulation = await Promise.all(
+				simulations.map((simulation) => listSeries(simulation.id)),
+			);
+
+			const bySeriesId = new Map<number, string>();
+			for (const simulationSeries of seriesBySimulation) {
+				for (const series of simulationSeries) {
+					if (!bySeriesId.has(series.id)) {
+						bySeriesId.set(series.id, series.name);
+					}
+				}
+			}
+
+			const nextOptions = Array.from(bySeriesId.entries()).map(
+				([value, label]) => ({ value, label }),
+			);
+			setSeriesOptions(nextOptions);
+			setSelectedSeriesId((current) => {
+				if (
+					current !== null &&
+					nextOptions.some((option) => option.value === current)
+				) {
+					return current;
+				}
+				return nextOptions[0]?.value ?? null;
+			});
+		} catch (error) {
+			void message.error(`Failed to load series: ${String(error)}`);
+		} finally {
+			setIsSeriesOptionsLoading(false);
+		}
+	}, []);
+
 	useEffect(() => {
 		const timeoutId = window.setTimeout(() => {
-			void loadSeasons();
+			void Promise.all([loadSeasons(), loadSeriesOptions()]);
 		}, 0);
 		return () => {
 			window.clearTimeout(timeoutId);
 		};
-	}, [loadSeasons]);
-
-	const seriesOptions = useMemo(() => {
-		const bySeriesId = new Map<number, string>();
-		for (const entry of items) {
-			if (!bySeriesId.has(entry.season.seriesId)) {
-				bySeriesId.set(entry.season.seriesId, entry.seriesName);
-			}
-		}
-		return Array.from(bySeriesId.entries()).map(([value, label]) => ({
-			value,
-			label,
-		}));
-	}, [items]);
+	}, [loadSeasons, loadSeriesOptions]);
 
 	return (
 		<Space orientation="vertical" size={16} style={{ width: "100%" }}>
@@ -80,6 +100,7 @@ export function SeasonsPage() {
 						<Select
 							placeholder="Select series for new season"
 							style={{ minWidth: 260 }}
+							loading={isSeriesOptionsLoading}
 							value={selectedSeriesId ?? undefined}
 							onChange={setSelectedSeriesId}
 							options={seriesOptions}
@@ -102,8 +123,13 @@ export function SeasonsPage() {
 						</Button>
 						<Button
 							icon={<ReloadOutlined />}
-							onClick={() => void loadSeasons()}
-							loading={isLoading}
+							onClick={() => {
+								void Promise.all([
+									loadSeasons(),
+									loadSeriesOptions(),
+								]);
+							}}
+							loading={isLoading || isSeriesOptionsLoading}
 						>
 							Refresh
 						</Button>

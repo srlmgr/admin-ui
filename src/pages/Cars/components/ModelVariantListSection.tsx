@@ -1,73 +1,73 @@
 import { PlusOutlined } from "@ant-design/icons";
-import type { CarModel } from "@buf/srlmgr_api.bufbuild_es/backend/common/v1/common_pb";
+import type { CarModelVariant } from "@buf/srlmgr_api.bufbuild_es/backend/common/v1/common_pb";
 import { Button, Card, Empty, List, message, Spin, theme } from "antd";
 import { useMemo } from "react";
 
-interface ModelListSectionProps {
-	selectedBrandId: number | null;
-	models: CarModel[];
+interface ModelVariantListSectionProps {
 	selectedModelId: number | null;
+	variants: CarModelVariant[];
+	selectedVariantId: number | null;
 	isLoading: boolean;
-	onSelectModel: (id: number) => void;
+	onSelectVariant: (id: number) => void;
 	onCreateClick: () => void;
 }
 
-export function ModelListSection({
-	selectedBrandId,
-	models,
+export function ModelVariantListSection({
 	selectedModelId,
+	variants,
+	selectedVariantId,
 	isLoading,
-	onSelectModel,
+	onSelectVariant,
 	onCreateClick,
-}: ModelListSectionProps) {
+}: ModelVariantListSectionProps) {
 	const {
 		token: { colorPrimaryBg },
 	} = theme.useToken();
-	const sortedModels = useMemo(
-		() => [...models].sort((a, b) => a.name.localeCompare(b.name)),
-		[models],
+	const sortedVariants = useMemo(
+		() => [...variants].sort((a, b) => a.name.localeCompare(b.name)),
+		[variants],
 	);
 	return (
 		<Card
-			title="Models"
+			title="Model Variants"
 			extra={
 				<Button
 					type="link"
 					icon={<PlusOutlined />}
 					onClick={() => {
-						if (selectedBrandId === null) {
-							void message.warning("Select a brand first.");
+						if (selectedModelId === null) {
+							void message.warning("Select a model first.");
 							return;
 						}
 						onCreateClick();
 					}}
-					disabled={selectedBrandId === null}
+					disabled={selectedModelId === null}
 				>
 					New
 				</Button>
 			}
 		>
 			<Spin spinning={isLoading}>
-				{selectedBrandId === null ? (
-					<Empty description="Select a brand" />
-				) : models.length === 0 ? (
-					<Empty description="No models" />
+				{selectedModelId === null ? (
+					<Empty description="Select a model" />
+				) : variants.length === 0 ? (
+					<Empty description="No variants" />
 				) : (
 					<List
 						size="small"
-						dataSource={sortedModels}
+						dataSource={sortedVariants}
 						renderItem={(item) => (
 							<List.Item
 								style={{
 									cursor: "pointer",
 									backgroundColor:
-										selectedModelId === item.id
+										selectedVariantId === item.id
 											? colorPrimaryBg
 											: "transparent",
 									paddingInline: 8,
 									borderRadius: 6,
 								}}
-								onClick={() => onSelectModel(item.id)}
+								onClick={() => onSelectVariant(item.id)}
 							>
 								{item.name}
 							</List.Item>

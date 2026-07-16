@@ -53,7 +53,6 @@ type SeasonTeamRow = {
 	joinedAt?: Timestamp;
 	leftAt?: Timestamp;
 };
-
 type SeasonTeamsProps = {
 	seasonId: number;
 	isTeamBased: boolean;
@@ -63,7 +62,6 @@ type DriverOption = {
 	driverId: number;
 	name: string;
 };
-
 type TeamMemberFormValues = {
 	driverId: number;
 	joinedAt?: Dayjs;
@@ -110,24 +108,28 @@ function toRows(
 	items.forEach((item, itemIndex) => {
 		const carModelsById = new Map(
 			item.carData
-				.filter((carDataItem) => Boolean(carDataItem.carModel))
+				.filter((carDataItem) => Boolean(carDataItem.carModelVariant))
 				.map((carDataItem) => [
-					String(carDataItem.carModel?.id ?? ""),
-					carDataItem.carModel,
+					String(carDataItem.carModelVariant?.id ?? ""),
+					carDataItem.carModelVariant,
 				]),
 		);
 
 		item.teams.forEach((team: Team) => {
-			const carModel = carModelsById.get(String(team.carModelId));
+			const carModelVariant = carModelsById.get(
+				String(team.carModelVariantId),
+			);
 			rows.push({
 				key: `${itemIndex}-${team.id}`,
 				teamId: team.id,
 				teamName: team.name?.trim() || `Team #${team.id}`,
 				isActive: team.isActive,
-				carModelId: team.carModelId ?? 0,
+				carModelId: team.carModelVariantId ?? 0,
 				carModelName:
-					carModel?.name?.trim() ||
-					(team.carModelId ? `Car model #${team.carModelId}` : "-"),
+					carModelVariant?.name?.trim() ||
+					(team.carModelVariantId
+						? `Car model #${team.carModelVariantId}`
+						: "-"),
 				carNumber: team.carNumber?.trim() || "-",
 				joinedAt: team.joinedAt,
 				leftAt: team.leftAt,

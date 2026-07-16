@@ -1,5 +1,8 @@
-import { listAllCarModelOptions, type CarModelOption } from "@/api/cars";
-import { createSeasonTeam, updateSeasonTeam } from "@/api/seasons";
+import {
+	createSeasonTeam,
+	listSeasonCarModelVariants,
+	updateSeasonTeam,
+} from "@/api/seasons";
 import type { Timestamp } from "@bufbuild/protobuf/wkt";
 import { DatePicker, Form, Input, Modal, Select, Switch, message } from "antd";
 import type { Dayjs } from "dayjs";
@@ -24,6 +27,11 @@ type SeasonTeamFormValues = {
 	carNumber: string;
 	joinedAt?: Dayjs;
 	leftAt?: Dayjs;
+};
+
+type SeasonCarModelVariantOption = {
+	carModelId: number;
+	label: string;
 };
 
 type SeasonTeamModalProps = {
@@ -59,9 +67,9 @@ export function SeasonTeamModal({
 	onSaved,
 }: SeasonTeamModalProps) {
 	const [form] = Form.useForm<SeasonTeamFormValues>();
-	const [carModelOptions, setCarModelOptions] = useState<CarModelOption[]>(
-		[],
-	);
+	const [carModelOptions, setCarModelOptions] = useState<
+		SeasonCarModelVariantOption[]
+	>([]);
 	const [isLoadingOptions, setIsLoadingOptions] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
 
@@ -71,7 +79,7 @@ export function SeasonTeamModal({
 		() => ({
 			name: editRow?.name ?? "",
 			isActive: editRow?.isActive ?? true,
-			carModelId: editRow?.carModelId ?? 0,
+			carModelId: Number(editRow?.carModelId ?? 0),
 			carNumber: editRow?.carNumber ?? "",
 			joinedAt: timestampToDayjs(editRow?.joinedAt),
 			leftAt: timestampToDayjs(editRow?.leftAt),
@@ -82,14 +90,38 @@ export function SeasonTeamModal({
 	const loadOptions = useCallback(async () => {
 		setIsLoadingOptions(true);
 		try {
-			const items = await listAllCarModelOptions();
-			setCarModelOptions(items);
+			const items = await listSeasonCarModelVariants(seasonId);
+			let options = items
+				.map((item) => ({
+					carModelId: Number(item.id),
+					label: item.name?.trim() || `Car model variant #${item.id}`,
+				}))
+				.sort((a, b) => a.label.localeCompare(b.label));
+
+			if (editRow) {
+				const selectedId = Number(editRow.carModelId);
+				if (
+					!options.some((option) => option.carModelId === selectedId)
+				) {
+					options = [
+						{
+							carModelId: selectedId,
+							label:
+								editRow.carModelName?.trim() ||
+								`Car model variant #${selectedId}`,
+						},
+						...options,
+					];
+				}
+			}
+
+			setCarModelOptions(options);
 		} catch (error) {
 			void message.error(`Failed to load options: ${String(error)}`);
 		} finally {
 			setIsLoadingOptions(false);
 		}
-	}, []);
+	}, [editRow, seasonId]);
 
 	useEffect(() => {
 		if (!open) {
@@ -115,7 +147,7 @@ export function SeasonTeamModal({
 			const normalizedCarNumber = values.carNumber?.trim();
 			const teamCarFields = isTeamBased
 				? {
-						carModelId: values.carModelId,
+						carModelId: Number(values.carModelId),
 						carNumber:
 							normalizedCarNumber &&
 							normalizedCarNumber.length > 0
@@ -201,19 +233,19 @@ export function SeasonTeamModal({
 				{isTeamBased ? (
 					<>
 						<Form.Item
-							label="Car Model"
+							label="Car Model Variant"
 							name="carModelId"
 							rules={[
 								{
 									required: true,
-									message: "Car model is required",
+									message: "Car model variant is required",
 								},
 							]}
 						>
 							<Select
 								showSearch
 								loading={isLoadingOptions}
-								placeholder="Select car model"
+								placeholder="Select car model variant"
 								optionFilterProp="label"
 								filterOption={(input, option) =>
 									String(option?.label ?? "")

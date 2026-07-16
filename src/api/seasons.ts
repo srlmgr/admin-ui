@@ -6,7 +6,7 @@ import {
 import { SeasonCarModelsUpdateMode } from "@buf/srlmgr_api.bufbuild_es/backend/command/v1/command_pb";
 import type {
 	CarClass,
-	CarModel,
+	CarModelVariant,
 	Event,
 	PointSystem,
 	Season,
@@ -152,10 +152,10 @@ export async function listSeasonTeams(
 	return response.items;
 }
 
-export async function listSeasonCarModels(
+export async function listSeasonCarModelVariants(
 	seasonId: number,
-): Promise<CarModel[]> {
-	const response = await getFrontendClient().listSeasonCarModels({
+): Promise<CarModelVariant[]> {
+	const response = await getFrontendClient().listSeasonCarModelVariants({
 		seasonId,
 	});
 	return response.items;
@@ -170,13 +170,13 @@ export async function listSeasonCarClasses(
 	return response.items;
 }
 
-export async function setSeasonCarModels(
+export async function setSeasonCarModelVariants(
 	seasonId: number,
-	carModelIds: number[],
+	carModelVariantIds: number[],
 ): Promise<void> {
-	await getCommandClient().setSeasonCarModels({
+	await getCommandClient().setSeasonCarModelVariants({
 		seasonId,
-		carModelIds,
+		carModelVariantIds,
 	});
 }
 
@@ -194,7 +194,7 @@ export async function setSeasonCarClasses(
 export type AddSeasonDriverInput = {
 	seasonId: number;
 	driverId: number;
-	carModelId: number | string;
+	carModelVariantId: number | string;
 	carNumber: string;
 	joinedAt?: Date;
 };
@@ -210,13 +210,17 @@ function toRequiredUInt32(value: number | string, fieldName: string): number {
 	return normalized;
 }
 
+//seems to be unused....
 export async function addSeasonDriver(
 	input: AddSeasonDriverInput,
 ): Promise<void> {
 	await getCommandClient().addSeasonDriver({
 		seasonId: input.seasonId,
 		driverId: input.driverId,
-		carModelId: toRequiredUInt32(input.carModelId, "carModelId"),
+		carModelVariantId: toRequiredUInt32(
+			input.carModelVariantId,
+			"carModelVariantId",
+		),
 		carNumber: input.carNumber,
 		joinedAt: input.joinedAt ? dateToTimestamp(input.joinedAt) : undefined,
 	});

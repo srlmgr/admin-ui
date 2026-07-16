@@ -74,27 +74,29 @@ function toRows(
 		);
 		const carModelsById = new Map(
 			item.carData
-				.filter((carDataItem) => Boolean(carDataItem.carModel))
+				.filter((carDataItem) => Boolean(carDataItem.carModelVariant))
 				.map((carDataItem) => [
-					String(carDataItem.carModel?.id ?? ""),
-					carDataItem.carModel,
+					String(carDataItem.carModelVariant?.id ?? ""),
+					carDataItem.carModelVariant,
 				]),
 		);
 
 		item.seasonDrivers.forEach((seasonDriver: SeasonDriver) => {
 			const driver = driversById.get(seasonDriver.driverId);
-			const carModel = carModelsById.get(String(seasonDriver.carModelId));
+			const carModelVariant = carModelsById.get(
+				String(seasonDriver.carModelVariantId),
+			);
 			rows.push({
 				key: `${itemIndex}-${seasonDriver.id}`,
 				seasonDriverId: seasonDriver.id,
 				driverId: seasonDriver.driverId,
-				carModelId: seasonDriver.carModelId,
+				carModelId: seasonDriver.carModelVariantId,
 				carNumber: seasonDriver.carNumber?.trim() || "-",
 				driverName:
 					driver?.name?.trim() || `Driver #${seasonDriver.driverId}`,
 				carModelName:
-					carModel?.name?.trim() ||
-					`Car model #${seasonDriver.carModelId}`,
+					carModelVariant?.name?.trim() ||
+					`Car model #${seasonDriver.carModelVariantId}`,
 				isGuestDriver: seasonDriver.isGuestDriver,
 				joinedAt: seasonDriver.joinedAt,
 				leftAt: seasonDriver.leftAt,
@@ -110,6 +112,7 @@ function toRowData(row: SeasonDriverRow): SeasonDriverRowData {
 		seasonDriverId: row.seasonDriverId,
 		driverId: row.driverId,
 		carModelId: row.carModelId,
+		carModelName: row.carModelName,
 		carNumber: row.carNumber,
 		isGuestDriver: row.isGuestDriver,
 		joinedAt: row.joinedAt,
@@ -262,7 +265,7 @@ export function SeasonDrivers({ seasonId }: SeasonDriversProps) {
 								a.driverName.localeCompare(b.driverName),
 						},
 						{
-							title: "Car Model Name",
+							title: "Car Model Variant",
 							key: "carModelName",
 							dataIndex: "carModelName",
 							sorter: (a, b) =>

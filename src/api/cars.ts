@@ -1,15 +1,15 @@
 import { getCommandClient, getQueryClient } from "@/api/grpcClients";
 import type {
-	CarBrand,
 	CarManufacturer,
 	CarModel,
+	CarModelVariant,
 } from "@buf/srlmgr_api.bufbuild_es/backend/common/v1/common_pb";
 
 export type UpsertCarManufacturerInput = {
 	name: string;
 };
 
-export type UpsertCarBrandInput = {
+export type UpsertCarModelInput = {
 	manufacturerId: number;
 	name: string;
 };
@@ -19,8 +19,8 @@ export type SimulationAliasesInput = {
 	identifiers: string[];
 };
 
-export type UpsertCarModelInput = {
-	brandId: number;
+export type UpsertCarModelVariantInput = {
+	modelId: number;
 	name: string;
 	simulationAliases: SimulationAliasesInput[];
 };
@@ -71,87 +71,28 @@ export async function deleteCarManufacturer(
 	return response.deleted;
 }
 
-export async function listCarBrands(
-	manufacturerId: number,
-): Promise<CarBrand[]> {
-	const request: Record<string, unknown> = {
-		manufacturerId,
-		manufacturer_id: manufacturerId,
-	};
-	const response = await getQueryClient().listCarBrands(request as never);
-	return response.items;
-}
-
-export async function createCarBrand(
-	input: UpsertCarBrandInput,
-): Promise<CarBrand | undefined> {
-	const response = await getCommandClient().createCarBrand({
-		manufacturerId: input.manufacturerId,
-		name: input.name,
-	});
-	return response.carBrand;
-}
-
-export async function updateCarBrand(
-	carBrandId: number,
-	input: UpsertCarBrandInput,
-): Promise<CarBrand | undefined> {
-	const response = await getCommandClient().updateCarBrand({
-		carBrandId,
-		manufacturerId: input.manufacturerId,
-		name: input.name,
-	});
-	return response.carBrand;
-}
-
-export async function deleteCarBrand(carBrandId: number): Promise<boolean> {
-	const response = await getCommandClient().deleteCarBrand({
-		carBrandId,
-	});
-	return response.deleted;
-}
-
 export async function listCarModels(
 	manufacturerId: number,
 ): Promise<CarModel[]> {
-	const request: Record<string, unknown> = {
+	const response = await getQueryClient().listCarModels({
 		manufacturerId,
-		manufacturer_id: manufacturerId,
-	};
-	const response = await getQueryClient().listCarModels(request as never);
+	});
 	return response.items;
 }
 
-export async function getCarModel(carModelId: number): Promise<{
-	carModel: CarModel | undefined;
-	simulationAliases: SimulationAliasesInput[];
-}> {
+export async function getCarModel(
+	carModelId: number,
+): Promise<CarModel | undefined> {
 	const response = await getQueryClient().getCarModel({ id: carModelId });
-	const simulationAliases = (
-		response as unknown as {
-			simulationAliases?: SimulationAliasesInput[];
-			simulation_aliases?: SimulationAliasesInput[];
-		}
-	).simulationAliases;
-	const simulationAliasesLegacy = (
-		response as unknown as {
-			simulation_aliases?: SimulationAliasesInput[];
-		}
-	).simulation_aliases;
-
-	return {
-		carModel: response.carModel,
-		simulationAliases: simulationAliases ?? simulationAliasesLegacy ?? [],
-	};
+	return response.carModel;
 }
 
 export async function createCarModel(
 	input: UpsertCarModelInput,
 ): Promise<CarModel | undefined> {
 	const response = await getCommandClient().createCarModel({
-		brandId: input.brandId,
+		manufacturerId: input.manufacturerId,
 		name: input.name,
-		simulationAliases: input.simulationAliases,
 	});
 	return response.carModel;
 }
@@ -162,9 +103,8 @@ export async function updateCarModel(
 ): Promise<CarModel | undefined> {
 	const response = await getCommandClient().updateCarModel({
 		carModelId,
-		brandId: input.brandId,
+		manufacturerId: input.manufacturerId,
 		name: input.name,
-		simulationAliases: input.simulationAliases,
 	});
 	return response.carModel;
 }
@@ -172,6 +112,66 @@ export async function updateCarModel(
 export async function deleteCarModel(carModelId: number): Promise<boolean> {
 	const response = await getCommandClient().deleteCarModel({
 		carModelId,
+	});
+	return response.deleted;
+}
+
+export async function listCarModelVariants(
+	modelId: number,
+): Promise<CarModelVariant[]> {
+	const response = await getQueryClient().listCarModelVariants({
+		modelId,
+	});
+	return response.items;
+}
+export async function listAllCarModelVariants(): Promise<CarModelVariant[]> {
+	const response = await getQueryClient().listCarModelVariants({});
+	return response.items;
+}
+
+export async function getCarModelVariant(carModelVariantId: number): Promise<{
+	carModelVariant: CarModelVariant | undefined;
+	simulationAliases: SimulationAliasesInput[];
+}> {
+	const response = await getQueryClient().getCarModelVariant({
+		id: carModelVariantId,
+	});
+
+	return {
+		carModelVariant: response.carModelVariant,
+		simulationAliases: response.simulationAliases,
+	};
+}
+
+export async function createCarModelVariant(
+	input: UpsertCarModelVariantInput,
+): Promise<CarModelVariant | undefined> {
+	const response = await getCommandClient().createCarModelVariant({
+		modelId: input.modelId,
+		name: input.name,
+		simulationAliases: input.simulationAliases,
+	});
+	return response.carModelVariant;
+}
+
+export async function updateCarModelVariant(
+	carModelVariantId: number,
+	input: UpsertCarModelVariantInput,
+): Promise<CarModelVariant | undefined> {
+	const response = await getCommandClient().updateCarModelVariant({
+		carModelVariantId,
+		modelId: input.modelId,
+		name: input.name,
+		simulationAliases: input.simulationAliases,
+	});
+	return response.carModelVariant;
+}
+
+export async function deleteCarModelVariant(
+	carModelVariantId: number,
+): Promise<boolean> {
+	const response = await getCommandClient().deleteCarModelVariant({
+		carModelVariantId,
 	});
 	return response.deleted;
 }

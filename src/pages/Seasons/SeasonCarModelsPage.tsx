@@ -1,8 +1,8 @@
-import { listAllCarModelOptions, type CarModelOption } from "@/api/cars";
+import { listAllCarModelVariants } from "@/api/cars";
 import {
 	getSeason,
-	listSeasonCarModels,
-	setSeasonCarModels,
+	listSeasonCarModelVariants,
+	setSeasonCarModelVariants,
 } from "@/api/seasons";
 import { SeasonEntityBreadcrumbs } from "@/pages/Seasons/components/SeasonEntityBreadcrumbs";
 import {
@@ -33,6 +33,11 @@ type SeasonCarModelRow = {
 	name: string;
 };
 
+type CarModelVariantOption = {
+	carModelVariantId: number;
+	label: string;
+};
+
 export function SeasonCarModelsPage() {
 	const navigate = useNavigate();
 	const params = useParams();
@@ -41,12 +46,12 @@ export function SeasonCarModelsPage() {
 	const [seasonCarModels, setSeasonCarModelsState] = useState<
 		SeasonCarModelRow[]
 	>([]);
-	const [allCarModelOptions, setAllCarModelOptions] = useState<
-		CarModelOption[]
+	const [allCarModelVariantOptions, setAllCarModelVariantOptions] = useState<
+		CarModelVariantOption[]
 	>([]);
-	const [selectedCarModelId, setSelectedCarModelId] = useState<number | null>(
-		null,
-	);
+	const [selectedCarModelVariantId, setSelectedCarModelVariantId] = useState<
+		number | null
+	>(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
 	const [persistedIds, setPersistedIds] = useState<number[]>([]);
@@ -62,28 +67,35 @@ export function SeasonCarModelsPage() {
 		try {
 			const [season, selectedItems, allOptions] = await Promise.all([
 				getSeason(seasonId),
-				listSeasonCarModels(seasonId),
-				listAllCarModelOptions(),
+				listSeasonCarModelVariants(seasonId),
+				listAllCarModelVariants(),
 			]);
 
 			setSeasonName(season?.name ?? `Season #${seasonId}`);
-			setAllCarModelOptions(allOptions);
+			setAllCarModelVariantOptions(
+				allOptions
+					.map((option) => ({
+						carModelVariantId: option.id,
+						label: option.name,
+					}))
+					.sort((a, b) => a.label.localeCompare(b.label)),
+			);
 
 			const labelById = new Map(
-				allOptions.map((option) => [option.carModelId, option.label]),
+				allOptions.map((option) => [option.id, option.name]),
 			);
 			const nextRows = selectedItems.map((item) => ({
 				id: item.id,
 				name:
 					labelById.get(item.id) ??
 					item.name?.trim() ??
-					`Car model #${item.id}`,
+					`Car model variant #${item.id}`,
 			}));
 			setSeasonCarModelsState(nextRows);
 			setPersistedIds(nextRows.map((item) => item.id));
 		} catch (error) {
 			void message.error(
-				`Failed to load season car models: ${String(error)}`,
+				`Failed to load season car model variants: ${String(error)}`,
 			);
 		} finally {
 			setIsLoading(false);
@@ -106,42 +118,46 @@ export function SeasonCarModelsPage() {
 
 	const availableOptions = useMemo(
 		() =>
-			allCarModelOptions
-				.filter((option) => !selectedIds.includes(option.carModelId))
+			allCarModelVariantOptions
+				.filter(
+					(option) => !selectedIds.includes(option.carModelVariantId),
+				)
 				.map((option) => ({
-					value: option.carModelId,
+					value: option.carModelVariantId,
 					label: option.label,
 				})),
-		[allCarModelOptions, selectedIds],
+		[allCarModelVariantOptions, selectedIds],
 	);
 
 	const handleAdd = useCallback(() => {
-		if (selectedCarModelId === null) {
-			void message.warning("Select a car model to add.");
+		if (selectedCarModelVariantId === null) {
+			void message.warning("Select a car model variant to add.");
 			return;
 		}
-		if (selectedIds.includes(selectedCarModelId)) {
-			void message.warning("Car model already exists for this season.");
+		if (selectedIds.includes(selectedCarModelVariantId)) {
+			void message.warning(
+				"Car model variant already exists for this season.",
+			);
 			return;
 		}
 
-		const selectedOption = allCarModelOptions.find(
-			(item) => item.carModelId === selectedCarModelId,
+		const selectedOption = allCarModelVariantOptions.find(
+			(item) => item.carModelVariantId === selectedCarModelVariantId,
 		);
 		if (!selectedOption) {
-			void message.error("Selected car model was not found.");
+			void message.error("Selected car model variant was not found.");
 			return;
 		}
 
 		setSeasonCarModelsState((current) => [
 			...current,
 			{
-				id: selectedOption.carModelId,
+				id: selectedOption.carModelVariantId,
 				name: selectedOption.label,
 			},
 		]);
-		setSelectedCarModelId(null);
-	}, [allCarModelOptions, selectedCarModelId, selectedIds]);
+		setSelectedCarModelVariantId(null);
+	}, [allCarModelVariantOptions, selectedCarModelVariantId, selectedIds]);
 
 	const handleRemove = useCallback((carModelId: number) => {
 		setSeasonCarModelsState((current) =>
@@ -178,12 +194,12 @@ export function SeasonCarModelsPage() {
 	const handleSave = useCallback(async () => {
 		setIsSaving(true);
 		try {
-			await setSeasonCarModels(seasonId, selectedIds);
+			await setSeasonCarModelVariants(seasonId, selectedIds);
 			setPersistedIds(selectedIds);
-			void message.success("Season car models saved.");
+			void message.success("Season car model variants saved.");
 		} catch (error) {
 			void message.error(
-				`Failed to save season car models: ${String(error)}`,
+				`Failed to save season car model variants: ${String(error)}`,
 			);
 		} finally {
 			setIsSaving(false);
@@ -208,22 +224,22 @@ export function SeasonCarModelsPage() {
 					Back
 				</Button>
 				<Title level={2} style={{ margin: 0 }}>
-					Season Cars
+					Season Car Model Variants
 				</Title>
 			</Space>
 
 			<Card
-				title={`Car Models for ${seasonName}`}
+				title={`Car Model Variants for ${seasonName}`}
 				extra={
 					<Space>
 						<Select
 							showSearch
 							allowClear
-							placeholder="Select car model"
+							placeholder="Select car model variant"
 							style={{ minWidth: 320 }}
-							value={selectedCarModelId ?? undefined}
+							value={selectedCarModelVariantId ?? undefined}
 							onChange={(value) =>
-								setSelectedCarModelId(value ?? null)
+								setSelectedCarModelVariantId(value ?? null)
 							}
 							options={availableOptions}
 							optionFilterProp="label"
@@ -308,7 +324,7 @@ export function SeasonCarModelsPage() {
 							render: (_, __, index) => index + 1,
 						},
 						{
-							title: "Car Model",
+							title: "Car Model Variant",
 							dataIndex: "name",
 							key: "name",
 						},
@@ -318,7 +334,7 @@ export function SeasonCarModelsPage() {
 							render: (_, row) => (
 								<Space size={4}>
 									<Popconfirm
-										title="Remove car model"
+										title="Remove car model variant"
 										description={`Remove ${row.name} from this season?`}
 										onConfirm={() => handleRemove(row.id)}
 										okText="Remove"

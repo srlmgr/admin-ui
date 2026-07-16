@@ -1,13 +1,13 @@
 import {
-	createCarModel,
-	deleteCarModel,
-	getCarModel,
-	updateCarModel,
+	createCarModelVariant,
+	deleteCarModelVariant,
+	getCarModelVariant,
+	updateCarModelVariant,
 	type SimulationAliasesInput,
 } from "@/api/cars";
 import { DeleteOutlined, PlusOutlined, SaveOutlined } from "@ant-design/icons";
 import type {
-	CarModel,
+	CarModelVariant,
 	Simulation,
 } from "@buf/srlmgr_api.bufbuild_es/backend/common/v1/common_pb";
 import {
@@ -36,15 +36,14 @@ type ModelFormValues = {
 	name: string;
 };
 
-interface ModelEditorSectionProps {
-	selectedBrandId: number | null;
+interface ModelVariantEditorSectionProps {
 	selectedModelId: number | null;
+	selectedVariantId: number | null;
 	simulations: Simulation[];
 	selectedSimulationId: number | null;
 	onSelectSimulation: (id: number) => void;
 	isCreating: boolean;
-	filteredModels: CarModel[];
-	selectedManufacturerId: number | null;
+	variants: CarModelVariant[];
 	onCreated: () => Promise<void>;
 	onUpdated: () => Promise<void>;
 	onDeleted: () => Promise<void>;
@@ -64,19 +63,18 @@ const createAliasState = (
 	return bySimulationId;
 };
 
-export function ModelEditorSection({
-	selectedBrandId,
+export function ModelVariantEditorSection({
 	selectedModelId,
+	selectedVariantId,
 	simulations,
 	selectedSimulationId,
 	onSelectSimulation,
 	isCreating,
-	filteredModels,
-	selectedManufacturerId,
+	variants,
 	onCreated,
 	onUpdated,
 	onDeleted,
-}: ModelEditorSectionProps) {
+}: ModelVariantEditorSectionProps) {
 	const [form] = Form.useForm<ModelFormValues>();
 	const {
 		token: { colorPrimaryBg, colorSplit },
@@ -86,8 +84,8 @@ export function ModelEditorSection({
 	);
 	const [isLoading, setIsLoading] = useState(false);
 
-	const selectedModel = filteredModels.find(
-		(item) => item.id === selectedModelId,
+	const selectedVariant = variants.find(
+		(item) => item.id === selectedVariantId,
 	);
 	const sortedSimulations = useMemo(
 		() => [...simulations].sort((a, b) => a.name.localeCompare(b.name)),
@@ -104,7 +102,7 @@ export function ModelEditorSection({
 			return;
 		}
 
-		if (selectedModelId === null) {
+		if (selectedVariantId === null) {
 			form.resetFields();
 			// Defer alias reset to avoid setState in effect
 			const timeoutId = window.setTimeout(() => {
@@ -116,19 +114,19 @@ export function ModelEditorSection({
 		const loadModelDetails = async () => {
 			setIsLoading(true);
 			try {
-				const response = await getCarModel(selectedModelId);
-				if (!response.carModel) {
+				const response = await getCarModelVariant(selectedVariantId);
+				if (!response.carModelVariant) {
 					form.resetFields();
 					setModelAliases(createAliasState(simulations));
 					return;
 				}
 
-				form.setFieldsValue({ name: response.carModel.name });
+				form.setFieldsValue({ name: response.carModelVariant.name });
 				setModelAliases(
 					createAliasState(simulations, response.simulationAliases),
 				);
 			} catch (error) {
-				const errorMessage = `Failed to load car model: ${String(error)}`;
+				const errorMessage = `Failed to load model variant: ${String(error)}`;
 				void message.error(errorMessage);
 			} finally {
 				setIsLoading(false);
@@ -136,7 +134,7 @@ export function ModelEditorSection({
 		};
 
 		void loadModelDetails();
-	}, [isCreating, selectedModelId, simulations, form]);
+	}, [isCreating, selectedVariantId, simulations, form]);
 
 	useEffect(() => {
 		if (isCreating) {
@@ -148,8 +146,8 @@ export function ModelEditorSection({
 	}, [isCreating, simulations]);
 
 	const handleSave = async () => {
-		if (selectedBrandId === null || selectedManufacturerId === null) {
-			void message.warning("Select a brand first.");
+		if (selectedModelId === null) {
+			void message.warning("Select a model first.");
 			return;
 		}
 
@@ -166,27 +164,27 @@ export function ModelEditorSection({
 			);
 
 			if (isCreating) {
-				await createCarModel({
-					brandId: selectedBrandId,
+				await createCarModelVariant({
+					modelId: selectedModelId,
 					name: values.name,
 					simulationAliases,
 				});
-				void message.success("Model created.");
+				void message.success("Model variant created.");
 				await onCreated();
 				return;
 			}
 
-			if (selectedModelId === null) {
-				void message.warning("Select a model first.");
+			if (selectedVariantId === null) {
+				void message.warning("Select a model variant first.");
 				return;
 			}
 
-			await updateCarModel(selectedModelId, {
-				brandId: selectedBrandId,
+			await updateCarModelVariant(selectedVariantId, {
+				modelId: selectedModelId,
 				name: values.name,
 				simulationAliases,
 			});
-			void message.success("Model updated.");
+			void message.success("Model variant updated.");
 			await onUpdated();
 		} catch (error) {
 			if (
@@ -196,26 +194,28 @@ export function ModelEditorSection({
 			) {
 				return;
 			}
-			const errorMessage = `Failed to save model: ${String(error)}`;
+			const errorMessage = `Failed to save model variant: ${String(error)}`;
 			void message.error(errorMessage);
 		}
 	};
 
 	const handleDelete = async () => {
-		if (selectedModelId === null) {
+		if (selectedVariantId === null) {
 			return;
 		}
 
 		try {
-			const deleted = await deleteCarModel(selectedModelId);
+			const deleted = await deleteCarModelVariant(selectedVariantId);
 			if (!deleted) {
-				void message.warning("Model was not deleted by backend.");
+				void message.warning(
+					"Model variant was not deleted by backend.",
+				);
 				return;
 			}
-			void message.success("Model deleted.");
+			void message.success("Model variant deleted.");
 			await onDeleted();
 		} catch (error) {
-			const errorMessage = `Failed to delete model: ${String(error)}`;
+			const errorMessage = `Failed to delete model variant: ${String(error)}`;
 
 			void message.error(errorMessage);
 		}
@@ -257,30 +257,30 @@ export function ModelEditorSection({
 		<Card
 			title={
 				isCreating
-					? "Create Model"
-					: selectedModel
-						? `Edit Model: ${selectedModel.name}`
-						: "Model Details"
+					? "Create Model Variant"
+					: selectedVariant
+						? `Edit Model Variant: ${selectedVariant.name}`
+						: "Model Variant Details"
 			}
 		>
-			{selectedBrandId === null && !isCreating ? (
-				<Empty description="Select a brand to manage models" />
-			) : !isCreating && selectedModelId === null ? (
-				<Empty description="Select a model or create a new one" />
+			{selectedModelId === null && !isCreating ? (
+				<Empty description="Select a model to manage variants" />
+			) : !isCreating && selectedVariantId === null ? (
+				<Empty description="Select a variant or create a new one" />
 			) : (
 				<Spin spinning={isLoading}>
 					<Form form={form} layout="vertical">
 						<Form.Item
-							label="Model Name"
+							label="Variant Name"
 							name="name"
 							rules={[
 								{
 									required: true,
-									message: "Please enter a model name",
+									message: "Please enter a variant name",
 								},
 							]}
 						>
-							<Input placeholder="e.g., GT3 R" />
+							<Input placeholder="e.g., GT3 R Evo" />
 						</Form.Item>
 
 						{simulations.length > 0 ? (
@@ -426,7 +426,9 @@ export function ModelEditorSection({
 								icon={<SaveOutlined />}
 								onClick={() => void handleSave()}
 							>
-								{isCreating ? "Create Model" : "Update Model"}
+								{isCreating
+									? "Create Variant"
+									: "Update Variant"}
 							</Button>
 							{isCreating ? (
 								<Button
@@ -441,17 +443,17 @@ export function ModelEditorSection({
 								</Button>
 							) : (
 								<Popconfirm
-									title="Delete Model"
-									description="Delete selected model?"
+									title="Delete Model Variant"
+									description="Delete selected variant?"
 									onConfirm={() => void handleDelete()}
 									okText="Yes"
 									cancelText="No"
-									disabled={selectedModelId === null}
+									disabled={selectedVariantId === null}
 								>
 									<Button
 										danger
 										icon={<DeleteOutlined />}
-										disabled={selectedModelId === null}
+										disabled={selectedVariantId === null}
 									>
 										Delete
 									</Button>

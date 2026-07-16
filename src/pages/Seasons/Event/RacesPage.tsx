@@ -1,4 +1,4 @@
-import { listCarClassModels, listCarClasses } from "@/api/carClasses";
+import { listCarClassModelVariants, listCarClasses } from "@/api/carClasses";
 import {
 	computeBookingEntries,
 	createEventRacesAndGrids,
@@ -69,7 +69,7 @@ type StandingRow = {
 	previousPosition: number;
 	carNumber: string;
 	name: string;
-	carModelName: string;
+	carModelVariantName: string;
 	totalPoints: number;
 	bonusPoints: number;
 	penaltyPoints: number;
@@ -82,11 +82,11 @@ type StandingRow = {
 type ParticipantInfo = {
 	name: string;
 	carNumber: string;
-	carModelName: string;
+	carModelVariantName: string;
 };
 
 type ParticipantEntry = {
-	carModelId: number;
+	carModelVariantId: number;
 	carNumber: string;
 	joinedAt?: Timestamp;
 	leftAt?: Timestamp;
@@ -170,7 +170,9 @@ function selectPreferredEntry(
 	let candidates = entries;
 	if (carClassId > 0) {
 		const classMatchingEntries = entries.filter((entry) => {
-			const classIds = carModelClassIdsByModelId.get(entry.carModelId);
+			const classIds = carModelClassIdsByModelId.get(
+				entry.carModelVariantId,
+			);
 			return Boolean(classIds?.has(carClassId));
 		});
 
@@ -329,7 +331,7 @@ export function RacesPage() {
 			const carClassModels = await Promise.all(
 				carClassIds.map(async (carClassId) => ({
 					carClassId,
-					models: await listCarClassModels(carClassId),
+					models: await listCarClassModelVariants(carClassId),
 				})),
 			);
 			const nextCarModelClassIdsByModelId = new Map<
@@ -385,7 +387,7 @@ export function RacesPage() {
 	const resolveDriverInfo = useMemo(() => {
 		const namesById = new Map<number, string>();
 		const entriesByDriverId = new Map<number, ParticipantEntry[]>();
-		const carModelNameById = new Map<number, string>();
+		const carModelVariantNameById = new Map<number, string>();
 
 		seasonDriverItems.forEach((item) => {
 			item.drivers.forEach((driver) => {
@@ -396,14 +398,14 @@ export function RacesPage() {
 			});
 
 			item.carData.forEach((carDataItem) => {
-				const carModelId = carDataItem.carModel?.id;
-				if (!carModelId) {
+				const carModelVariantId = carDataItem.carModelVariant?.id;
+				if (!carModelVariantId) {
 					return;
 				}
-				carModelNameById.set(
-					carModelId,
-					carDataItem.carModel?.name.trim() ||
-						`Car model #${carModelId}`,
+				carModelVariantNameById.set(
+					carModelVariantId,
+					carDataItem.carModelVariant?.name.trim() ||
+						`Car model #${carModelVariantId}`,
 				);
 			});
 
@@ -417,7 +419,7 @@ export function RacesPage() {
 				const entries =
 					entriesByDriverId.get(seasonDriver.driverId) ?? [];
 				entries.push({
-					carModelId: seasonDriver.carModelId,
+					carModelVariantId: seasonDriver.carModelVariantId,
 					carNumber: seasonDriver.carNumber.trim() || "-",
 					joinedAt: seasonDriver.joinedAt,
 					leftAt: seasonDriver.leftAt,
@@ -436,14 +438,14 @@ export function RacesPage() {
 				carModelClassIdsByModelId,
 			);
 			const carModelName = preferred
-				? (carModelNameById.get(preferred.carModelId) ??
-					`Car model #${preferred.carModelId}`)
+				? (carModelVariantNameById.get(preferred.carModelVariantId) ??
+					`Car model #${preferred.carModelVariantId}`)
 				: "-";
 
 			return {
 				name,
 				carNumber: preferred?.carNumber || "-",
-				carModelName,
+				carModelVariantName: carModelName,
 			};
 		};
 	}, [carModelClassIdsByModelId, eventDate, seasonDriverItems]);
@@ -451,18 +453,18 @@ export function RacesPage() {
 	const resolveTeamInfo = useMemo(() => {
 		const namesById = new Map<number, string>();
 		const entriesByTeamId = new Map<number, ParticipantEntry[]>();
-		const carModelNameById = new Map<number, string>();
+		const carModelVariantNameById = new Map<number, string>();
 
 		seasonTeamItems.forEach((item) => {
 			item.carData.forEach((carDataItem) => {
-				const carModelId = carDataItem.carModel?.id;
-				if (!carModelId) {
+				const carModelVariantId = carDataItem.carModelVariant?.id;
+				if (!carModelVariantId) {
 					return;
 				}
-				carModelNameById.set(
-					carModelId,
-					carDataItem.carModel?.name.trim() ||
-						`Car model #${carModelId}`,
+				carModelVariantNameById.set(
+					carModelVariantId,
+					carDataItem.carModelVariant?.name.trim() ||
+						`Car model #${carModelVariantId}`,
 				);
 			});
 
@@ -477,7 +479,7 @@ export function RacesPage() {
 
 				const entries = entriesByTeamId.get(team.id) ?? [];
 				entries.push({
-					carModelId: team.carModelId,
+					carModelVariantId: team.carModelVariantId,
 					carNumber: team.carNumber.trim() || "-",
 					joinedAt: team.joinedAt,
 					leftAt: team.leftAt,
@@ -495,15 +497,15 @@ export function RacesPage() {
 				eventDate,
 				carModelClassIdsByModelId,
 			);
-			const carModelName = preferred?.carModelId
-				? (carModelNameById.get(preferred.carModelId) ??
-					`Car model #${preferred.carModelId}`)
+			const carModelName = preferred?.carModelVariantId
+				? (carModelVariantNameById.get(preferred.carModelVariantId) ??
+					`Car model #${preferred.carModelVariantId}`)
 				: "-";
 
 			return {
 				name,
 				carNumber: preferred?.carNumber || "-",
-				carModelName,
+				carModelVariantName: carModelName,
 			};
 		};
 	}, [carModelClassIdsByModelId, eventDate, seasonTeamItems]);
@@ -544,7 +546,7 @@ export function RacesPage() {
 						previousPosition: standing.data?.prevPosition ?? 0,
 						carNumber: info?.carNumber ?? "-",
 						name,
-						carModelName: info?.carModelName ?? "-",
+						carModelVariantName: info?.carModelVariantName ?? "-",
 						totalPoints: standing.data?.totalPoints ?? 0,
 						bonusPoints: standing.data?.bonusPoints ?? 0,
 						penaltyPoints: standing.data?.penaltyPoints ?? 0,
@@ -616,8 +618,8 @@ export function RacesPage() {
 			},
 			{
 				title: "Car",
-				dataIndex: "carModelName",
-				key: "carModelName",
+				dataIndex: "carModelVariantName",
+				key: "carModelVariantName",
 			},
 			{
 				title: "Total",
