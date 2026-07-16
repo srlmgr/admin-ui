@@ -1,7 +1,7 @@
 import { getCommandClient, getQueryClient } from "@/api/grpcClients";
 import type {
 	CarClass,
-	CarModel,
+	CarModelVariant,
 } from "@buf/srlmgr_api.bufbuild_es/backend/common/v1/common_pb";
 
 export type UpsertCarClassInput = {
@@ -20,10 +20,10 @@ export async function getCarClass(
 	return response.carClass;
 }
 
-export async function listCarClassModels(
+export async function listCarClassModelVariants(
 	carClassId: number,
-): Promise<CarModel[]> {
-	const response = await getQueryClient().listCarClassModels({
+): Promise<CarModelVariant[]> {
+	const response = await getQueryClient().listCarClassModelVariants({
 		classId: carClassId,
 	});
 	return response.items;
@@ -56,22 +56,22 @@ export async function deleteCarClass(carClassId: number): Promise<boolean> {
 	return response.deleted;
 }
 
-export async function assignCarModelToCarClass(
+export async function assignCarModelVariantToCarClass(
 	carClassId: number,
-	carModelId: number,
+	carModelVariantId: number,
 ): Promise<void> {
-	await getCommandClient().assignCarModelToCarClass({
+	await getCommandClient().assignCarModelVariantToCarClass({
 		carClassId,
-		carModelId,
+		carModelVariantId,
 	});
 }
 
-export async function unassignCarModelFromCarClass(
+export async function unassignCarModelVariantFromCarClass(
 	carClassId: number,
-	carModelId: number,
+	carModelVariantId: number,
 ): Promise<void> {
-	await getCommandClient().unassignCarModelFromCarClass({
+	await getCommandClient().unassignCarModelVariantFromCarClass({
 		carClassId,
-		carModelId,
+		carModelVariantId,
 	});
 }

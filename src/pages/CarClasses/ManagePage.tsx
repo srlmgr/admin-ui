@@ -1,15 +1,15 @@
 import {
-	assignCarModelToCarClass,
+	assignCarModelVariantToCarClass,
 	createCarClass,
 	deleteCarClass,
 	getCarClass,
-	listCarClassModels,
+	listCarClassModelVariants,
 	listCarClasses,
-	unassignCarModelFromCarClass,
+	unassignCarModelVariantFromCarClass,
 	updateCarClass,
 	type UpsertCarClassInput,
 } from "@/api/carClasses";
-import { listAllCarModelOptions } from "@/api/cars";
+import { listAllCarModelVariants } from "@/api/cars";
 import {
 	DeleteOutlined,
 	EditOutlined,
@@ -18,7 +18,7 @@ import {
 } from "@ant-design/icons";
 import type {
 	CarClass,
-	CarModel,
+	CarModelVariant,
 } from "@buf/srlmgr_api.bufbuild_es/backend/common/v1/common_pb";
 import {
 	Alert,
@@ -45,8 +45,8 @@ type CarClassFormValues = {
 	name: string;
 };
 
-type CarModelOption = {
-	carModelId: number;
+type CarModelVariantOption = {
+	carModelVariantId: number;
 	label: string;
 };
 
@@ -54,13 +54,14 @@ export function CarClassManagePage() {
 	const [classes, setClasses] = useState<CarClass[]>([]);
 	const [selectedClassId, setSelectedClassId] = useState<number | null>(null);
 	const [selectedClass, setSelectedClass] = useState<CarClass | null>(null);
-	const [classModels, setClassModels] = useState<CarModel[]>([]);
-	const [allModelOptions, setAllModelOptions] = useState<CarModelOption[]>(
-		[],
-	);
-	const [selectedModelToAssign, setSelectedModelToAssign] = useState<
-		number | undefined
-	>(undefined);
+	const [classModelVariants, setClassModelVariants] = useState<
+		CarModelVariant[]
+	>([]);
+	const [allModelVariantOptions, setAllModelVariantOptions] = useState<
+		CarModelVariantOption[]
+	>([]);
+	const [selectedModelVariantToAssign, setSelectedModelVariantToAssign] =
+		useState<number | undefined>(undefined);
 	const [nameFilter, setNameFilter] = useState("");
 	const [grpcError, setGrpcError] = useState<string | null>(null);
 
@@ -85,30 +86,34 @@ export function CarClassManagePage() {
 	}, [classes, nameFilter]);
 
 	const assignedModelIds = useMemo(
-		() => new Set(classModels.map((model) => model.id)),
-		[classModels],
+		() => new Set(classModelVariants.map((model) => model.id)),
+		[classModelVariants],
 	);
 
 	const availableModelOptions = useMemo(
 		() =>
-			allModelOptions
-				.filter((option) => !assignedModelIds.has(option.carModelId))
+			allModelVariantOptions
+				.filter(
+					(option) => !assignedModelIds.has(option.carModelVariantId),
+				)
 				.sort((a, b) => a.label.localeCompare(b.label)),
-		[allModelOptions, assignedModelIds],
+		[allModelVariantOptions, assignedModelIds],
 	);
 
 	const assignedModelRows = useMemo(
 		() =>
-			[...classModels].sort((a, b) => {
+			[...classModelVariants].sort((a, b) => {
 				const aLabel =
-					allModelOptions.find((option) => option.carModelId === a.id)
-						?.label ?? a.name;
+					allModelVariantOptions.find(
+						(option) => option.carModelVariantId === a.id,
+					)?.label ?? a.name;
 				const bLabel =
-					allModelOptions.find((option) => option.carModelId === b.id)
-						?.label ?? b.name;
+					allModelVariantOptions.find(
+						(option) => option.carModelVariantId === b.id,
+					)?.label ?? b.name;
 				return aLabel.localeCompare(bLabel);
 			}),
-		[classModels, allModelOptions],
+		[classModelVariants, allModelVariantOptions],
 	);
 
 	const loadClasses = useCallback(async (nextSelectedId?: number | null) => {
@@ -149,12 +154,13 @@ export function CarClassManagePage() {
 	const loadDetails = useCallback(async (carClassId: number) => {
 		setIsDetailLoading(true);
 		try {
-			const [carClass, models] = await Promise.all([
+			const [carClass, modelVariants] = await Promise.all([
 				getCarClass(carClassId),
-				listCarClassModels(carClassId),
+
+				listCarClassModelVariants(carClassId),
 			]);
 			setSelectedClass(carClass ?? null);
-			setClassModels(models);
+			setClassModelVariants(modelVariants);
 			setGrpcError(null);
 		} catch (error) {
 			const errorMessage = `Failed to load car class details: ${String(error)}`;
@@ -165,12 +171,17 @@ export function CarClassManagePage() {
 		}
 	}, []);
 
-	const loadAllModelOptions = useCallback(async () => {
+	const loadAllCarModelVariants = useCallback(async () => {
 		try {
-			const items = await listAllCarModelOptions();
-			setAllModelOptions(items);
+			const items = await listAllCarModelVariants();
+			setAllModelVariantOptions(
+				items.map((item) => ({
+					carModelVariantId: item.id,
+					label: item.name,
+				})),
+			);
 		} catch (error) {
-			const errorMessage = `Failed to load car models: ${String(error)}`;
+			const errorMessage = `Failed to load car model variants: ${String(error)}`;
 			setGrpcError(errorMessage);
 			void message.error(errorMessage);
 		}
@@ -178,24 +189,24 @@ export function CarClassManagePage() {
 
 	useEffect(() => {
 		const timeoutId = window.setTimeout(() => {
-			void Promise.all([loadClasses(), loadAllModelOptions()]);
+			void Promise.all([loadClasses(), loadAllCarModelVariants()]);
 		}, 0);
 
 		return () => {
 			window.clearTimeout(timeoutId);
 		};
-	}, [loadClasses, loadAllModelOptions]);
+	}, [loadClasses, loadAllCarModelVariants]);
 
 	useEffect(() => {
 		const timeoutId = window.setTimeout(() => {
 			if (selectedClassId === null) {
 				setSelectedClass(null);
-				setClassModels([]);
-				setSelectedModelToAssign(undefined);
+				setClassModelVariants([]);
+				setSelectedModelVariantToAssign(undefined);
 				return;
 			}
 
-			setSelectedModelToAssign(undefined);
+			setSelectedModelVariantToAssign(undefined);
 			void loadDetails(selectedClassId);
 		}, 0);
 
@@ -269,21 +280,24 @@ export function CarClassManagePage() {
 		}
 	};
 
-	const handleAssignModel = async () => {
-		if (selectedClassId === null || selectedModelToAssign === undefined) {
+	const handleAssignModelVariant = async () => {
+		if (
+			selectedClassId === null ||
+			selectedModelVariantToAssign === undefined
+		) {
 			return;
 		}
 		setIsModelOpLoading(true);
 		try {
-			await assignCarModelToCarClass(
+			await assignCarModelVariantToCarClass(
 				selectedClassId,
-				selectedModelToAssign,
+				selectedModelVariantToAssign,
 			);
-			void message.success("Car model assigned");
-			setSelectedModelToAssign(undefined);
+			void message.success("Car model variant assigned");
+			setSelectedModelVariantToAssign(undefined);
 			await loadDetails(selectedClassId);
 		} catch (error) {
-			const errorMessage = `Failed to assign car model: ${String(error)}`;
+			const errorMessage = `Failed to assign car model variant: ${String(error)}`;
 			setGrpcError(errorMessage);
 			void message.error(errorMessage);
 		} finally {
@@ -291,17 +305,20 @@ export function CarClassManagePage() {
 		}
 	};
 
-	const handleUnassignModel = async (carModelId: number) => {
+	const handleUnassignModelVariant = async (carModelVariantId: number) => {
 		if (selectedClassId === null) {
 			return;
 		}
 		setIsModelOpLoading(true);
 		try {
-			await unassignCarModelFromCarClass(selectedClassId, carModelId);
-			void message.success("Car model removed from class");
+			await unassignCarModelVariantFromCarClass(
+				selectedClassId,
+				carModelVariantId,
+			);
+			void message.success("Car model variant removed from class");
 			await loadDetails(selectedClassId);
 		} catch (error) {
-			const errorMessage = `Failed to remove car model: ${String(error)}`;
+			const errorMessage = `Failed to remove car model variant: ${String(error)}`;
 			setGrpcError(errorMessage);
 			void message.error(errorMessage);
 		} finally {
@@ -330,22 +347,23 @@ export function CarClassManagePage() {
 		},
 	];
 
-	const modelColumns: ColumnsType<CarModel> = [
+	const modelColumns: ColumnsType<CarModelVariant> = [
 		{
-			title: "Model",
+			title: "Model variant",
 			key: "name",
 			render: (_, model) =>
-				allModelOptions.find((option) => option.carModelId === model.id)
-					?.label ?? model.name,
+				allModelVariantOptions.find(
+					(option) => option.carModelVariantId === model.id,
+				)?.label ?? model.name,
 		},
 		{
 			title: "Actions",
 			key: "actions",
 			render: (_, model) => (
 				<Popconfirm
-					title="Remove model"
+					title="Remove model variant"
 					description={`Remove ${model.name} from this car class?`}
-					onConfirm={() => void handleUnassignModel(model.id)}
+					onConfirm={() => void handleUnassignModelVariant(model.id)}
 					okText="Remove"
 					okButtonProps={{ danger: true }}
 				>
@@ -483,13 +501,15 @@ export function CarClassManagePage() {
 										<Select
 											style={{ width: "100%" }}
 											placeholder="Select car model"
-											value={selectedModelToAssign}
+											value={selectedModelVariantToAssign}
 											onChange={(value) =>
-												setSelectedModelToAssign(value)
+												setSelectedModelVariantToAssign(
+													value,
+												)
 											}
 											options={availableModelOptions.map(
 												(option) => ({
-													value: option.carModelId,
+													value: option.carModelVariantId,
 													label: option.label,
 												}),
 											)}
@@ -499,12 +519,12 @@ export function CarClassManagePage() {
 										<Button
 											type="primary"
 											disabled={
-												selectedModelToAssign ===
+												selectedModelVariantToAssign ===
 												undefined
 											}
 											loading={isModelOpLoading}
 											onClick={() =>
-												void handleAssignModel()
+												void handleAssignModelVariant()
 											}
 										>
 											Add
@@ -512,7 +532,7 @@ export function CarClassManagePage() {
 									</Space.Compact>
 								</Space>
 
-								<Table<CarModel>
+								<Table<CarModelVariant>
 									rowKey="id"
 									size="small"
 									loading={
