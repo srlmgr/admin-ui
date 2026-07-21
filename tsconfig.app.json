@@ -19,9 +19,8 @@
     "noUncheckedSideEffectImports": true,
     "types": ["vitest/globals", "node"],
     "ignoreDeprecations": "6.0",
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     },
     "allowJs": false
   },
