@@ -15,14 +15,14 @@
   "dependencies": {
     "@ant-design/icons": "^6.3.2",
     "@buf/srlmgr_api.bufbuild_es": "2.12.1-20260716061628-1668d7708353.1",
-    "@bufbuild/protobuf": "^2.12.1",
+    "@bufbuild/protobuf": "^2.13.0",
     "@connectrpc/connect": "^2.1.2",
     "@connectrpc/connect-web": "^2.1.2",
     "@reduxjs/toolkit": "^2.12.0",
-    "antd": "^6.5.1",
+    "antd": "^6.5.2",
     "dayjs": "^1.11.21",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
     "react-redux": "^9.3.0",
     "react-router-dom": "^7.18.1"
   },
