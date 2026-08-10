@@ -196,6 +196,8 @@ export type AddSeasonDriverInput = {
 	driverId: number;
 	carModelVariantId: number | string;
 	carNumber: string;
+	isGuestDriver?: boolean;
+	isRookieDriver?: boolean;
 	joinedAt?: Date;
 };
 
@@ -222,6 +224,8 @@ export async function addSeasonDriver(
 			"carModelVariantId",
 		),
 		carNumber: input.carNumber,
+		isGuestDriver: input.isGuestDriver ?? false,
+		isRookieDriver: input.isRookieDriver ?? false,
 		joinedAt: input.joinedAt ? dateToTimestamp(input.joinedAt) : undefined,
 	});
 }
@@ -234,7 +238,7 @@ export type UpsertSeasonTeamInput = {
 	seasonId: number;
 	name: string;
 	isActive: boolean;
-	carModelId?: number | string;
+	carModelVariantId?: number | string;
 	carNumber?: string;
 	joinedAt?: Date;
 	leftAt?: Date;
@@ -272,11 +276,13 @@ export async function createSeasonTeam(
 			dateToTimestamp(input.joinedAt);
 	}
 
-	if (input.carModelId) {
-		const normalizedCarModelId = toUInt32OrUndefined(input.carModelId);
-		if (normalizedCarModelId !== undefined) {
-			(payload as unknown as Record<string, unknown>).carModelId =
-				normalizedCarModelId;
+	if (input.carModelVariantId) {
+		const normalizedCarModelVariantId = toUInt32OrUndefined(
+			input.carModelVariantId,
+		);
+		if (normalizedCarModelVariantId !== undefined) {
+			(payload as unknown as Record<string, unknown>).carModelVariantId =
+				normalizedCarModelVariantId;
 		}
 	}
 	if (input.carNumber) {
@@ -311,11 +317,13 @@ export async function updateSeasonTeam(
 			dateToTimestamp(input.leftAt);
 	}
 
-	if (input.carModelId) {
-		const normalizedCarModelId = toUInt32OrUndefined(input.carModelId);
-		if (normalizedCarModelId !== undefined) {
-			(payload as unknown as Record<string, unknown>).carModelId =
-				normalizedCarModelId;
+	if (input.carModelVariantId) {
+		const normalizedCarModelVariantId = toUInt32OrUndefined(
+			input.carModelVariantId,
+		);
+		if (normalizedCarModelVariantId !== undefined) {
+			(payload as unknown as Record<string, unknown>).carModelVariantId =
+				normalizedCarModelVariantId;
 		}
 	}
 	if (input.carNumber) {
@@ -370,9 +378,10 @@ export async function listTeamMembers(teamId: number): Promise<TeamMember[]> {
 
 export type SeasonDriverEntry = {
 	driverId: number;
-	carModelId: number | string;
+	carModelVariantId: number | string;
 	carNumber: string;
 	isGuestDriver: boolean;
+	isRookieDriver: boolean;
 	joinedAt?: Date;
 	leftAt?: Date;
 };
@@ -385,9 +394,13 @@ export async function setSeasonDrivers(
 		seasonId,
 		drivers: entries.map((e) => ({
 			driverId: e.driverId,
-			carModelId: toRequiredUInt32(e.carModelId, "carModelId"),
+			carModelVariantId: toRequiredUInt32(
+				e.carModelVariantId,
+				"carModelVariantId",
+			),
 			carNumber: e.carNumber,
 			isGuestDriver: e.isGuestDriver,
+			isRookieDriver: e.isRookieDriver,
 			joinedAt: e.joinedAt ? dateToTimestamp(e.joinedAt) : undefined,
 			leftAt: e.leftAt ? dateToTimestamp(e.leftAt) : undefined,
 		})),

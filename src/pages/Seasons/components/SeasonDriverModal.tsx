@@ -14,10 +14,11 @@ import { useCallback, useEffect, useState } from "react";
 export type SeasonDriverRowData = {
 	seasonDriverId: number;
 	driverId: number;
-	carModelId: number;
+	carModelVariantId: number;
 	carModelName?: string;
 	carNumber: string;
 	isGuestDriver: boolean;
+	isRookieDriver: boolean;
 	joinedAt?: Timestamp;
 	leftAt?: Timestamp;
 };
@@ -27,6 +28,7 @@ type SeasonDriverFormValues = {
 	carModelId: number;
 	carNumber: string;
 	isGuestDriver: boolean;
+	isRookieDriver: boolean;
 	joinedAt?: Dayjs;
 	leftAt?: Dayjs;
 };
@@ -94,7 +96,7 @@ export function SeasonDriverModal({
 				.sort((a, b) => a.label.localeCompare(b.label));
 
 			if (editRow) {
-				const selectedId = Number(editRow.carModelId);
+				const selectedId = Number(editRow.carModelVariantId);
 				if (
 					!options.some((option) => option.carModelId === selectedId)
 				) {
@@ -128,9 +130,10 @@ export function SeasonDriverModal({
 			if (editRow) {
 				form.setFieldsValue({
 					driverId: editRow.driverId,
-					carModelId: Number(editRow.carModelId),
+					carModelId: Number(editRow.carModelVariantId),
 					carNumber: editRow.carNumber,
 					isGuestDriver: editRow.isGuestDriver,
+					isRookieDriver: editRow.isRookieDriver,
 					joinedAt: timestampToDayjs(editRow.joinedAt),
 					leftAt: timestampToDayjs(editRow.leftAt),
 				});
@@ -150,9 +153,10 @@ export function SeasonDriverModal({
 
 			const newEntry: SeasonDriverEntry = {
 				driverId: values.driverId,
-				carModelId: Number(values.carModelId),
+				carModelVariantId: Number(values.carModelId),
 				carNumber: values.carNumber.trim(),
 				isGuestDriver: values.isGuestDriver ?? false,
+				isRookieDriver: values.isRookieDriver ?? false,
 				joinedAt: dayjsToDate(values.joinedAt),
 				leftAt: dayjsToDate(values.leftAt),
 			};
@@ -164,9 +168,10 @@ export function SeasonDriverModal({
 						? newEntry
 						: {
 								driverId: row.driverId,
-								carModelId: row.carModelId,
+								carModelVariantId: row.carModelVariantId,
 								carNumber: row.carNumber,
 								isGuestDriver: row.isGuestDriver,
+								isRookieDriver: row.isRookieDriver,
 								joinedAt: row.joinedAt
 									? new Date(
 											Number(row.joinedAt.seconds) * 1000,
@@ -183,9 +188,10 @@ export function SeasonDriverModal({
 				const existingEntries: SeasonDriverEntry[] = allRows.map(
 					(row) => ({
 						driverId: row.driverId,
-						carModelId: row.carModelId,
+						carModelVariantId: row.carModelVariantId,
 						carNumber: row.carNumber,
 						isGuestDriver: row.isGuestDriver,
+						isRookieDriver: row.isRookieDriver,
 						joinedAt: row.joinedAt
 							? new Date(Number(row.joinedAt.seconds) * 1000)
 							: undefined,
@@ -304,6 +310,15 @@ export function SeasonDriverModal({
 				<Form.Item
 					label="Guest Driver"
 					name="isGuestDriver"
+					valuePropName="checked"
+					initialValue={false}
+				>
+					<Switch size="small" />
+				</Form.Item>
+
+				<Form.Item
+					label="Rookie Driver"
+					name="isRookieDriver"
 					valuePropName="checked"
 					initialValue={false}
 				>
