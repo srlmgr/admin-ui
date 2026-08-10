@@ -27,6 +27,7 @@ type SeasonDriverRow = {
 	driverName: string;
 	carModelName: string;
 	isGuestDriver: boolean;
+	isRookieDriver: boolean;
 	joinedAt?: Timestamp;
 	leftAt?: Timestamp;
 };
@@ -98,6 +99,7 @@ function toRows(
 					carModelVariant?.name?.trim() ||
 					`Car model #${seasonDriver.carModelVariantId}`,
 				isGuestDriver: seasonDriver.isGuestDriver,
+				isRookieDriver: seasonDriver.isRookieDriver,
 				joinedAt: seasonDriver.joinedAt,
 				leftAt: seasonDriver.leftAt,
 			});
@@ -111,10 +113,11 @@ function toRowData(row: SeasonDriverRow): SeasonDriverRowData {
 	return {
 		seasonDriverId: row.seasonDriverId,
 		driverId: row.driverId,
-		carModelId: row.carModelId,
+		carModelVariantId: row.carModelId,
 		carModelName: row.carModelName,
 		carNumber: row.carNumber,
 		isGuestDriver: row.isGuestDriver,
+		isRookieDriver: row.isRookieDriver,
 		joinedAt: row.joinedAt,
 		leftAt: row.leftAt,
 	};
@@ -280,6 +283,16 @@ export function SeasonDrivers({ seasonId }: SeasonDriversProps) {
 							sorter: (a, b) =>
 								Number(a.isGuestDriver) -
 								Number(b.isGuestDriver),
+						},
+						{
+							title: "Rookie",
+							key: "isRookieDriver",
+							dataIndex: "isRookieDriver",
+							render: (isRookieDriver: boolean) =>
+								isRookieDriver ? "Yes" : "No",
+							sorter: (a, b) =>
+								Number(a.isRookieDriver) -
+								Number(b.isRookieDriver),
 						},
 						{
 							title: "Joined At",
