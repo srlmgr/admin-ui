@@ -1,9 +1,13 @@
 import {
 	createSeasonEvent,
+	listPointSystems,
 	listTrackLayoutsForSimulation,
 	updateSeasonEvent,
 } from "@/api/seasons";
-import type { Event } from "@buf/srlmgr_api.bufbuild_es/backend/common/v1/common_pb";
+import type {
+	Event,
+	PointSystem,
+} from "@buf/srlmgr_api.bufbuild_es/backend/common/v1/common_pb";
 import type { TrackLayoutContainer } from "@buf/srlmgr_api.bufbuild_es/backend/query/v1/frontend_pb";
 import {
 	DatePicker,
@@ -25,6 +29,7 @@ type NewSeasonEventFormValues = {
 	name: string;
 	eventDate: Dayjs;
 	trackLayoutId: number;
+	pointSystemId: number;
 };
 
 type TrackLayoutOption = {
@@ -36,6 +41,7 @@ type NewEventModalProps = {
 	open: boolean;
 	seasonId: number;
 	simulationId: number | null;
+	seasonPointSystemId: number | null;
 	nextSequenceNo: number;
 	editEvent?: Event;
 	editTrackLayoutId?: number;
@@ -89,6 +95,7 @@ export function NewEventModal({
 	open,
 	seasonId,
 	simulationId,
+	seasonPointSystemId,
 	nextSequenceNo,
 	editEvent,
 	editTrackLayoutId,
@@ -97,6 +104,7 @@ export function NewEventModal({
 }: NewEventModalProps) {
 	const [form] = Form.useForm<NewSeasonEventFormValues>();
 	const [layoutOptions, setLayoutOptions] = useState<TrackLayoutOption[]>([]);
+	const [pointSystems, setPointSystems] = useState<PointSystem[]>([]);
 	const [isLoadingLayouts, setIsLoadingLayouts] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
 
@@ -126,6 +134,17 @@ export function NewEventModal({
 		}
 	}, [simulationId]);
 
+	const loadPointSystemOptions = useCallback(async () => {
+		try {
+			setPointSystems(await listPointSystems());
+		} catch (error) {
+			setPointSystems([]);
+			void message.error(
+				`Failed to load point systems: ${String(error)}`,
+			);
+		}
+	}, []);
+
 	useEffect(() => {
 		if (!open) {
 			return;
@@ -138,15 +157,27 @@ export function NewEventModal({
 					name: editEvent.name,
 					eventDate: timestampToDayjsDate(editEvent.eventDate),
 					trackLayoutId: editTrackLayoutId,
+					pointSystemId: editEvent.pointSystemId,
 				});
+			} else {
+				form.setFieldValue("pointSystemId", seasonPointSystemId);
 			}
 			void loadLayouts();
+			void loadPointSystemOptions();
 		}, 0);
 
 		return () => {
 			window.clearTimeout(timeoutId);
 		};
-	}, [editEvent, editTrackLayoutId, form, loadLayouts, open]);
+	}, [
+		editEvent,
+		editTrackLayoutId,
+		form,
+		loadLayouts,
+		loadPointSystemOptions,
+		open,
+		seasonPointSystemId,
+	]);
 
 	const handleSubmit = useCallback(async () => {
 		if (!canSubmit) {
@@ -166,6 +197,7 @@ export function NewEventModal({
 					name: values.name,
 					eventDate: values.eventDate.toDate(),
 					trackLayoutId: values.trackLayoutId,
+					pointSystemId: values.pointSystemId,
 					sequenceNo: editEvent.sequenceNo,
 					status: editEvent.status,
 					processingState: editEvent.processingState,
@@ -177,6 +209,7 @@ export function NewEventModal({
 					name: values.name,
 					eventDate: values.eventDate.toDate(),
 					trackLayoutId: values.trackLayoutId,
+					pointSystemId: values.pointSystemId,
 					sequenceNo: nextSequenceNo,
 				});
 				void message.success("Event created.");
@@ -283,6 +316,25 @@ export function NewEventModal({
 									? "Loading track layouts..."
 									: "No track layouts"
 							}
+						/>
+					</Form.Item>
+
+					<Form.Item
+						label="Point System"
+						name="pointSystemId"
+						rules={[
+							{
+								required: true,
+								message: "Point system is required",
+							},
+						]}
+					>
+						<Select
+							options={pointSystems.map((pointSystem) => ({
+								value: pointSystem.id,
+								label: pointSystem.name,
+							}))}
+							placeholder="Select point system"
 						/>
 					</Form.Item>
 				</Form>

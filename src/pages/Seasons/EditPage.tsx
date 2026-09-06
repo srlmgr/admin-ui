@@ -35,6 +35,7 @@ const NEW_SEASON_DEFAULTS: SeasonFormValues = {
 	name: "",
 	pointSystemId: 0,
 	skipEvents: 0,
+	numGrids: 1,
 	hasTeams: true,
 	isTeamBased: false,
 	teamPointsTopN: 0,
@@ -149,6 +150,7 @@ export function SeasonEditPage() {
 				name: values.name,
 				pointSystemId: values.pointSystemId,
 				skipEvents: values.skipEvents,
+				numGrids: values.numGrids,
 				hasTeams: values.hasTeams,
 				isTeamBased: values.isTeamBased,
 				teamPointsTopN: values.teamPointsTopN,
@@ -285,6 +287,19 @@ export function SeasonEditPage() {
 					<Space style={{ width: "100%" }} size={16} wrap>
 						<Form.Item label="Skip Events" name="skipEvents">
 							<InputNumber min={0} style={{ width: 180 }} />
+						</Form.Item>
+						<Form.Item
+							label="Num Grids"
+							name="numGrids"
+							rules={[
+								{
+									type: "number",
+									min: 1,
+									message: "Num Grids must be at least 1",
+								},
+							]}
+						>
+							<InputNumber min={1} style={{ width: 180 }} />
 						</Form.Item>
 						<Form.Item
 							label="Top N Team Entries"
