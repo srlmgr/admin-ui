@@ -69,6 +69,9 @@ export function SeasonManagePage() {
 	const [seriesName, setSeriesName] = useState<string>("");
 	const [seasonName, setSeasonName] = useState<string>("");
 	const [seasonIsTeamBased, setSeasonIsTeamBased] = useState(false);
+	const [seasonPointSystemId, setSeasonPointSystemId] = useState<
+		number | null
+	>(null);
 	const [events, setEvents] = useState<SeasonEventRow[]>([]);
 	const [simulationId, setSimulationId] = useState<number | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
@@ -99,6 +102,9 @@ export function SeasonManagePage() {
 				seasonEventsData.season?.name ?? `Season #${seasonId}`,
 			);
 			setSeasonIsTeamBased(seasonEventsData.season?.isTeamBased ?? false);
+			setSeasonPointSystemId(
+				seasonEventsData.season?.pointSystemId ?? null,
+			);
 			setSimulationId(seasonEventsData.series?.simulationId ?? null);
 			setEvents(toSeasonEventRows(seasonEventsData.events));
 		} catch (error) {
@@ -341,6 +347,7 @@ export function SeasonManagePage() {
 				open={isNewEventOpen || editingEvent !== null}
 				seasonId={seasonId}
 				simulationId={simulationId}
+				seasonPointSystemId={seasonPointSystemId}
 				nextSequenceNo={nextSequenceNo}
 				editEvent={editingEvent?.event}
 				editTrackLayoutId={editingEvent?.trackLayoutId}

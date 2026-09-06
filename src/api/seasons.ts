@@ -38,6 +38,7 @@ export type UpsertSeasonInput = {
 	name: string;
 	pointSystemId: number;
 	skipEvents: number;
+	numGrids: number;
 	hasTeams: boolean;
 	isTeamBased: boolean;
 	teamPointsTopN: number;
@@ -427,6 +428,7 @@ function dateToTimestamp(date: Date): Timestamp {
 export type CreateSeasonEventInput = {
 	seasonId: number;
 	trackLayoutId: number;
+	pointSystemId: number;
 	name: string;
 	sequenceNo: number;
 	eventDate: Date;
@@ -444,6 +446,7 @@ export async function createSeasonEvent(
 	const response = await getCommandClient().createEvent({
 		seasonId: input.seasonId,
 		trackLayoutId: input.trackLayoutId,
+		pointSystemId: input.pointSystemId,
 		name: input.name,
 		sequenceNo: input.sequenceNo,
 		eventDate: dateToTimestamp(input.eventDate),
@@ -461,6 +464,7 @@ export async function updateSeasonEvent(
 		eventId: input.eventId,
 		seasonId: input.seasonId,
 		trackLayoutId: input.trackLayoutId,
+		pointSystemId: input.pointSystemId,
 		name: input.name,
 		sequenceNo: input.sequenceNo,
 		eventDate: dateToTimestamp(input.eventDate),
@@ -483,6 +487,7 @@ export async function createSeason(
 		name: input.name,
 		pointSystemId: input.pointSystemId,
 		skipEvents: input.skipEvents,
+		numGrids: input.numGrids,
 		hasTeams: input.hasTeams,
 		isTeamBased: input.isTeamBased,
 		teamPointsTopN: input.teamPointsTopN,
@@ -503,6 +508,7 @@ export async function updateSeason(
 		name: input.name,
 		pointSystemId: input.pointSystemId,
 		skipEvents: input.skipEvents,
+		numGrids: input.numGrids,
 		hasTeams: input.hasTeams,
 		isTeamBased: input.isTeamBased,
 		teamPointsTopN: input.teamPointsTopN,
@@ -523,6 +529,7 @@ export type SeasonFormValues = {
 	name: string;
 	pointSystemId: number;
 	skipEvents: number;
+	numGrids: number;
 	hasTeams: boolean;
 	isTeamBased: boolean;
 	teamPointsTopN: number;
@@ -536,6 +543,7 @@ export function seasonToFormValues(season: Season): SeasonFormValues {
 		name: season.name,
 		pointSystemId: season.pointSystemId,
 		skipEvents: season.skipEvents,
+		numGrids: season.numGrids,
 		hasTeams: season.hasTeams,
 		isTeamBased: season.isTeamBased,
 		teamPointsTopN: season.teamPointsTopN,
