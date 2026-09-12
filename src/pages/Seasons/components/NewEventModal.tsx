@@ -1,5 +1,7 @@
+import { createEventRacesAndGrids } from "@/api/events";
 import {
 	createSeasonEvent,
+	getSeason,
 	listPointSystems,
 	listTrackLayoutsForSimulation,
 	updateSeasonEvent,
@@ -204,13 +206,25 @@ export function NewEventModal({
 				});
 				void message.success("Event updated.");
 			} else {
-				await createSeasonEvent({
+				const event = await createSeasonEvent({
 					seasonId,
 					name: values.name,
 					eventDate: values.eventDate.toDate(),
 					trackLayoutId: values.trackLayoutId,
 					pointSystemId: values.pointSystemId,
 					sequenceNo: nextSequenceNo,
+				});
+				if (!event) {
+					throw new Error("Backend did not return the created event");
+				}
+				const season = await getSeason(seasonId);
+				if (!season) {
+					throw new Error("Backend did not return the season");
+				}
+				await createEventRacesAndGrids({
+					eventId: event.id,
+					raceCount: season.numRaces || 1,
+					gridsPerRace: season.numGrids || 1,
 				});
 				void message.success("Event created.");
 			}

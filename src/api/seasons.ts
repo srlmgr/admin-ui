@@ -38,6 +38,7 @@ export type UpsertSeasonInput = {
 	name: string;
 	pointSystemId: number;
 	skipEvents: number;
+	numRaces: number;
 	numGrids: number;
 	hasTeams: boolean;
 	isTeamBased: boolean;
@@ -490,6 +491,7 @@ export async function createSeason(
 		name: input.name,
 		pointSystemId: input.pointSystemId,
 		skipEvents: input.skipEvents,
+		numRaces: input.numRaces,
 		numGrids: input.numGrids,
 		hasTeams: input.hasTeams,
 		isTeamBased: input.isTeamBased,
@@ -511,6 +513,7 @@ export async function updateSeason(
 		name: input.name,
 		pointSystemId: input.pointSystemId,
 		skipEvents: input.skipEvents,
+		numRaces: input.numRaces,
 		numGrids: input.numGrids,
 		hasTeams: input.hasTeams,
 		isTeamBased: input.isTeamBased,
@@ -532,6 +535,7 @@ export type SeasonFormValues = {
 	name: string;
 	pointSystemId: number;
 	skipEvents: number;
+	numRaces: number;
 	numGrids: number;
 	hasTeams: boolean;
 	isTeamBased: boolean;
@@ -546,6 +550,7 @@ export function seasonToFormValues(season: Season): SeasonFormValues {
 		name: season.name,
 		pointSystemId: season.pointSystemId,
 		skipEvents: season.skipEvents,
+		numRaces: season.numRaces,
 		numGrids: season.numGrids,
 		hasTeams: season.hasTeams,
 		isTeamBased: season.isTeamBased,

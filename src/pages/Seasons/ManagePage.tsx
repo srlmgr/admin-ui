@@ -91,20 +91,17 @@ export function SeasonManagePage() {
 		setIsLoading(true);
 		try {
 			const seasonEventsData = await listSeasonEvents(seasonId);
+			const seasonDetails = seasonEventsData.season;
 			setSeriesId(seasonEventsData.series?.id ?? null);
 			setSeriesName(
 				seasonEventsData.series?.name ??
-					(seasonEventsData.season?.seriesId
-						? `Series #${seasonEventsData.season.seriesId}`
+					(seasonDetails?.seriesId
+						? `Series #${seasonDetails.seriesId}`
 						: "Series"),
 			);
-			setSeasonName(
-				seasonEventsData.season?.name ?? `Season #${seasonId}`,
-			);
-			setSeasonIsTeamBased(seasonEventsData.season?.isTeamBased ?? false);
-			setSeasonPointSystemId(
-				seasonEventsData.season?.pointSystemId ?? null,
-			);
+			setSeasonName(seasonDetails?.name ?? `Season #${seasonId}`);
+			setSeasonIsTeamBased(seasonDetails?.isTeamBased ?? false);
+			setSeasonPointSystemId(seasonDetails?.pointSystemId ?? null);
 			setSimulationId(seasonEventsData.series?.simulationId ?? null);
 			setEvents(toSeasonEventRows(seasonEventsData.events));
 		} catch (error) {

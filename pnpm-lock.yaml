@@ -12,17 +12,17 @@ importers:
         specifier: ^6.3.2
         version: 6.3.2(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@buf/srlmgr_api.bufbuild_es':
-        specifier: 2.14.1-20260905170235-fa67978ab2b4.3
-        version: 2.14.1-20260905170235-fa67978ab2b4.3(@bufbuild/protobuf@2.14.0)
+        specifier: 2.15.0-20260912070732-9c3ae5e3bc85.1
+        version: 2.15.0-20260912070732-9c3ae5e3bc85.1(@bufbuild/protobuf@2.15.0)
       '@bufbuild/protobuf':
-        specifier: ^2.14.0
-        version: 2.14.0
+        specifier: ^2.15.0
+        version: 2.15.0
       '@connectrpc/connect':
         specifier: ^2.1.2
-        version: 2.1.2(@bufbuild/protobuf@2.14.0)
+        version: 2.1.2(@bufbuild/protobuf@2.15.0)
       '@connectrpc/connect-web':
         specifier: ^2.1.2
-        version: 2.1.2(@bufbuild/protobuf@2.14.0)(@connectrpc/connect@2.1.2(@bufbuild/protobuf@2.14.0))
+        version: 2.1.2(@bufbuild/protobuf@2.15.0)(@connectrpc/connect@2.1.2(@bufbuild/protobuf@2.15.0))
       '@reduxjs/toolkit':
         specifier: ^2.12.0
         version: 2.12.0(react-redux@9.3.0(@types/react@19.2.18)(react@19.2.8)(redux@5.0.1))(react@19.2.8)
@@ -223,13 +223,13 @@ packages:
     resolution: {integrity: sha512-ctxtJ/eA+t+6q2++vj5j7FYX3nRu311q1wfYH3xjlLOsczhlhxAg2FWNUXhpGvAw3BWo1xBcvOV6/YLc2r5FJw==}
     hasBin: true
 
-  '@buf/srlmgr_api.bufbuild_es@2.14.1-20260905170235-fa67978ab2b4.3':
-    resolution: {tarball: https://buf.build/gen/npm/v1/@buf/srlmgr_api.bufbuild_es/-/srlmgr_api.bufbuild_es-2.14.1-20260905170235-fa67978ab2b4.3.tgz}
+  '@buf/srlmgr_api.bufbuild_es@2.15.0-20260912070732-9c3ae5e3bc85.1':
+    resolution: {tarball: https://buf.build/gen/npm/v1/@buf/srlmgr_api.bufbuild_es/-/srlmgr_api.bufbuild_es-2.15.0-20260912070732-9c3ae5e3bc85.1.tgz}
     peerDependencies:
-      '@bufbuild/protobuf': ^2.14.1
+      '@bufbuild/protobuf': ^2.15.0
 
-  '@bufbuild/protobuf@2.14.0':
-    resolution: {integrity: sha512-C3UGsiCwSprE2NKIIFA3hCDlpXTMCAXRZuEVp88L1GY36Y41+rYL5fryE+nOFhp4p4JPQvdV8PQ4DWgHgeTE+w==}
+  '@bufbuild/protobuf@2.15.0':
+    resolution: {integrity: sha512-DAheWUkVr/SJTWCc+lg9dhY0eN4SaWlf4+bG1KzHeXbnqt0AfB/NX0Z+VunGlM1ki1B4zVvye27MpKh/svySUA==}
 
   '@connectrpc/connect-web@2.1.2':
     resolution: {integrity: sha512-1tfaK85MU+gJjwwmL31d2rzdf0XCYX99chZf63uG89SGBUd4XuZ4ZzhGo2u79TPXOE6nLIZQ2okrpyey42PYdg==}
@@ -2088,20 +2088,20 @@ snapshots:
     dependencies:
       css-tree: 3.2.1
 
-  '@buf/srlmgr_api.bufbuild_es@2.14.1-20260905170235-fa67978ab2b4.3(@bufbuild/protobuf@2.14.0)':
+  '@buf/srlmgr_api.bufbuild_es@2.15.0-20260912070732-9c3ae5e3bc85.1(@bufbuild/protobuf@2.15.0)':
     dependencies:
-      '@bufbuild/protobuf': 2.14.0
+      '@bufbuild/protobuf': 2.15.0
 
-  '@bufbuild/protobuf@2.14.0': {}
+  '@bufbuild/protobuf@2.15.0': {}
 
-  '@connectrpc/connect-web@2.1.2(@bufbuild/protobuf@2.14.0)(@connectrpc/connect@2.1.2(@bufbuild/protobuf@2.14.0))':
+  '@connectrpc/connect-web@2.1.2(@bufbuild/protobuf@2.15.0)(@connectrpc/connect@2.1.2(@bufbuild/protobuf@2.15.0))':
     dependencies:
-      '@bufbuild/protobuf': 2.14.0
-      '@connectrpc/connect': 2.1.2(@bufbuild/protobuf@2.14.0)
+      '@bufbuild/protobuf': 2.15.0
+      '@connectrpc/connect': 2.1.2(@bufbuild/protobuf@2.15.0)
 
-  '@connectrpc/connect@2.1.2(@bufbuild/protobuf@2.14.0)':
+  '@connectrpc/connect@2.1.2(@bufbuild/protobuf@2.15.0)':
     dependencies:
-      '@bufbuild/protobuf': 2.14.0
+      '@bufbuild/protobuf': 2.15.0
 
   '@csstools/color-helpers@6.1.0': {}
 
