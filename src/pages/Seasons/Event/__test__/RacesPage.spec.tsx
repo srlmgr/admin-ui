@@ -75,7 +75,7 @@ describe("RacesPage standings skip mode", () => {
 		vi.clearAllMocks();
 	});
 
-	it("defaults to when applicable and sends the skip mode in standings requests", async () => {
+	it("defaults to never and sends the skip mode in standings requests", async () => {
 		render(
 			<MemoryRouter initialEntries={["/seasons/1/events/2/races"]}>
 				<Routes>
@@ -87,12 +87,12 @@ describe("RacesPage standings skip mode", () => {
 			</MemoryRouter>,
 		);
 
-		expect(screen.getByText("When applicable")).toBeDefined();
+		expect(screen.getByText("Never")).toBeDefined();
 
 		await waitFor(() => {
 			expect(vi.mocked(getEventStandings)).toHaveBeenCalledWith(
 				2,
-				SkipMode.WHEN_APPLICABLE,
+				SkipMode.NEVER,
 			);
 		});
 	});
