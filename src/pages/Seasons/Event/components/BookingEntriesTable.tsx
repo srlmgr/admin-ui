@@ -95,6 +95,8 @@ export function BookingEntriesTable({
 	grids = [],
 	refreshToken,
 }: BookingEntriesTableProps) {
+	const scopeCase = scope.case;
+	const scopeValue = scope.value;
 	const [bookingEntries, setBookingEntries] = useState<BookingEntry[]>([]);
 	const [drivers, setDrivers] = useState<Driver[]>([]);
 	const [teams, setTeams] = useState<Team[]>([]);
@@ -106,7 +108,10 @@ export function BookingEntriesTable({
 		const loadBookingEntries = async () => {
 			setIsLoading(true);
 			try {
-				const response = await getBookingEntries(scope);
+				const response = await getBookingEntries({
+					case: scopeCase,
+					value: scopeValue,
+				});
 				if (isCancelled) {
 					return;
 				}
@@ -132,7 +137,7 @@ export function BookingEntriesTable({
 		return () => {
 			isCancelled = true;
 		};
-	}, [scope.case, scope.value, refreshToken]);
+	}, [refreshToken, scopeCase, scopeValue]);
 
 	const rows = useMemo(() => {
 		const driversById = new Map(
@@ -160,7 +165,7 @@ export function BookingEntriesTable({
 
 	const columns: TableColumnsType<BookingTableRow> = useMemo(
 		() => [
-			...(scope.case !== "gridId" && scope.case !== "raceId"
+			...(scopeCase !== "gridId" && scopeCase !== "raceId"
 				? [
 						{
 							title: "Race",
@@ -171,7 +176,7 @@ export function BookingEntriesTable({
 						},
 					]
 				: []),
-			...(scope.case !== "gridId"
+			...(scopeCase !== "gridId"
 				? [
 						{
 							title: "Grid",
@@ -221,7 +226,7 @@ export function BookingEntriesTable({
 				key: "description",
 			},
 		],
-		[],
+		[scopeCase],
 	);
 
 	return (

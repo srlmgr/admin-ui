@@ -24,6 +24,7 @@ import {
 	SettingOutlined,
 } from "@ant-design/icons";
 import {
+	SkipMode,
 	type Race,
 	type RaceGrid,
 } from "@buf/srlmgr_api.bufbuild_es/backend/common/v1/common_pb";
@@ -39,6 +40,7 @@ import {
 	InputNumber,
 	Modal,
 	Popconfirm,
+	Select,
 	Space,
 	Table,
 	Tabs,
@@ -229,6 +231,7 @@ export function RacesPage() {
 	const [isSeasonTeamBased, setIsSeasonTeamBased] = useState(false);
 	const [isSeasonMulticlass, setIsSeasonMulticlass] = useState(false);
 	const [isStandingsLoading, setIsStandingsLoading] = useState(false);
+	const [skipMode, setSkipMode] = useState<SkipMode>(SkipMode.NEVER);
 	const [primaryStandings, setPrimaryStandings] = useState<Standing[]>([]);
 	const [secondaryStandings, setSecondaryStandings] = useState<Standing[]>(
 		[],
@@ -309,7 +312,7 @@ export function RacesPage() {
 		try {
 			const [standingsResponse, driversResponse, teamsResponse] =
 				await Promise.all([
-					getEventStandings(eventId),
+					getEventStandings(eventId, skipMode),
 					listSeasonDrivers(seasonId),
 					listSeasonTeams(seasonId),
 				]);
@@ -366,7 +369,7 @@ export function RacesPage() {
 		} finally {
 			setIsStandingsLoading(false);
 		}
-	}, [eventId, isValidEventId, isValidSeasonId, seasonId]);
+	}, [eventId, isValidEventId, isValidSeasonId, seasonId, skipMode]);
 
 	useEffect(() => {
 		const timeoutId = window.setTimeout(() => {
@@ -1063,10 +1066,50 @@ export function RacesPage() {
 							</Button>
 						),
 						children: (
-							<Tabs
-								defaultActiveKey={standingsTabItems?.[0]?.key}
-								items={standingsTabItems}
-							/>
+							<Space
+								direction="vertical"
+								style={{ width: "100%" }}
+							>
+								<Space
+									direction="horizontal"
+									style={{
+										justifyContent: "flex-end",
+										width: "100%",
+										gap: 8,
+									}}
+								>
+									<span>Skip</span>
+									<Select
+										value={skipMode}
+										onChange={(value) => {
+											setSkipMode(
+												Number(value) as SkipMode,
+											);
+										}}
+										options={[
+											{
+												value: SkipMode.ALWAYS,
+												label: "Always",
+											},
+											{
+												value: SkipMode.NEVER,
+												label: "Never",
+											},
+											{
+												value: SkipMode.WHEN_APPLICABLE,
+												label: "When applicable",
+											},
+										]}
+										style={{ width: 180 }}
+									/>
+								</Space>
+								<Tabs
+									defaultActiveKey={
+										standingsTabItems?.[0]?.key
+									}
+									items={standingsTabItems}
+								/>
+							</Space>
 						),
 					},
 				]}

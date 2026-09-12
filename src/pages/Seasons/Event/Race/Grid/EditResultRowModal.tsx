@@ -40,7 +40,7 @@ type EditResultRowModalProps = {
 };
 
 const stateOptions = Object.entries(ResultEntryState)
-	.filter(([_, value]) => typeof value === "number")
+	.filter((entry) => typeof entry[1] === "number")
 	.map(([label, value]) => ({
 		label,
 		value: value as ResultEntry["state"],

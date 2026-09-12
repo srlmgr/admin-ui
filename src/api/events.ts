@@ -7,6 +7,7 @@ import {
 import { getConfig } from "@/config";
 import {
 	RaceSessionType,
+	SkipMode,
 	SummaryTargetType,
 	type Race,
 	type RaceGrid,
@@ -61,8 +62,9 @@ export async function getRaceSummary(
 
 export async function getEventStandings(
 	eventId: number,
+	skipMode: SkipMode = SkipMode.NEVER,
 ): Promise<GetStandingsResponse> {
-	return getStandingsClient().getStandings({ eventId });
+	return getStandingsClient().getStandings({ eventId, skipMode });
 }
 
 export async function deleteRace(raceId: number): Promise<void> {
