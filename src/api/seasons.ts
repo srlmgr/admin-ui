@@ -89,9 +89,12 @@ export function formatTimestamp(timestamp?: Timestamp): string {
 	return new Date(seconds * 1000).toLocaleDateString();
 }
 
-export async function listSeasonsOverview(): Promise<SeasonOverviewItem[]> {
+export async function listSeasonsOverview(
+	options: { includeInactive?: boolean } = {},
+): Promise<SeasonOverviewItem[]> {
+	const { includeInactive = false } = options;
 	const response = await getFrontendClient().listSeasonsOverview({
-		includeInactive: false,
+		includeInactive,
 	});
 
 	const seriesById = new Map(response.series.map((item) => [item.id, item]));

@@ -11,7 +11,16 @@ import {
 	ReloadOutlined,
 	SettingOutlined,
 } from "@ant-design/icons";
-import { Button, Card, Select, Space, Table, Typography, message } from "antd";
+import {
+	Button,
+	Card,
+	Select,
+	Space,
+	Table,
+	Typography,
+	message,
+	type TableProps,
+} from "antd";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -19,7 +28,10 @@ const { Title } = Typography;
 
 export function SeasonsPage() {
 	const navigate = useNavigate();
-	const [items, setItems] = useState<SeasonOverviewItem[]>([]);
+	const [activeItems, setActiveItems] = useState<SeasonOverviewItem[]>([]);
+	const [inactiveItems, setInactiveItems] = useState<SeasonOverviewItem[]>(
+		[],
+	);
 	const [isLoading, setIsLoading] = useState(false);
 	const [isSeriesOptionsLoading, setIsSeriesOptionsLoading] = useState(false);
 	const [seriesOptions, setSeriesOptions] = useState<
@@ -29,11 +41,104 @@ export function SeasonsPage() {
 		null,
 	);
 
+	const seasonColumns: NonNullable<
+		TableProps<SeasonOverviewItem>["columns"]
+	> = [
+		{
+			title: "Season Name",
+			dataIndex: ["season", "name"],
+			key: "seasonName",
+			sorter: (a: SeasonOverviewItem, b: SeasonOverviewItem) =>
+				a.season.name.localeCompare(b.season.name),
+			defaultSortOrder: "ascend" as const,
+		},
+		{
+			title: "Starts / Ends",
+			key: "seasonDates",
+			sorter: (a: SeasonOverviewItem, b: SeasonOverviewItem) =>
+				Number(a.season.startsAt?.seconds ?? 0n) -
+				Number(b.season.startsAt?.seconds ?? 0n),
+			render: (_: unknown, row: SeasonOverviewItem) =>
+				`${formatTimestamp(row.season.startsAt)} - ${formatTimestamp(row.season.endsAt)}`,
+		},
+		{
+			title: "Series",
+			dataIndex: "seriesName",
+			key: "seriesName",
+			sorter: (a: SeasonOverviewItem, b: SeasonOverviewItem) =>
+				a.seriesName.localeCompare(b.seriesName),
+		},
+		{
+			title: "Simulation",
+			dataIndex: "simulationName",
+			key: "simulationName",
+			sorter: (a: SeasonOverviewItem, b: SeasonOverviewItem) =>
+				a.simulationName.localeCompare(b.simulationName),
+		},
+		{
+			title: "Actions",
+			key: "actions",
+			render: (_: unknown, row: SeasonOverviewItem) => (
+				<Space>
+					<Button
+						size="small"
+						icon={<SettingOutlined />}
+						onClick={() =>
+							navigate(`/seasons/${row.season.id}/manage`)
+						}
+					>
+						Manage
+					</Button>
+					<Button
+						size="small"
+						icon={<EditOutlined />}
+						onClick={() =>
+							navigate(`/seasons/${row.season.id}/edit`)
+						}
+					>
+						Edit
+					</Button>
+					<Button
+						size="small"
+						onClick={() =>
+							navigate(`/seasons/${row.season.id}/cars`)
+						}
+					>
+						Cars
+					</Button>
+					{row.season.isMulticlass && (
+						<Button
+							size="small"
+							onClick={() =>
+								navigate(
+									`/seasons/${row.season.id}/car-classes`,
+								)
+							}
+						>
+							Car classes
+						</Button>
+					)}
+				</Space>
+			),
+		},
+	];
+
 	const loadSeasons = useCallback(async () => {
 		setIsLoading(true);
 		try {
-			const nextItems = await listSeasonsOverview();
-			setItems(nextItems);
+			const [nextActiveItems, nextInactiveItems] = await Promise.all([
+				listSeasonsOverview({ includeInactive: false }),
+				listSeasonsOverview({ includeInactive: true }),
+			]);
+			const activeIds = new Set(
+				nextActiveItems.map((item) => item.season.id),
+			);
+			setActiveItems(nextActiveItems);
+			setInactiveItems(
+				nextInactiveItems.filter(
+					(item) => !activeIds.has(item.season.id),
+				),
+			);
 		} catch (error) {
 			void message.error(`Failed to load seasons: ${String(error)}`);
 		} finally {
@@ -139,95 +244,19 @@ export function SeasonsPage() {
 				<Table<SeasonOverviewItem>
 					rowKey={(row) => row.season.id}
 					loading={isLoading}
-					dataSource={items}
+					dataSource={activeItems}
 					pagination={{ defaultPageSize: 20, showSizeChanger: true }}
-					columns={[
-						{
-							title: "Season Name",
-							dataIndex: ["season", "name"],
-							key: "seasonName",
-							sorter: (a, b) =>
-								a.season.name.localeCompare(b.season.name),
-							defaultSortOrder: "ascend",
-						},
-						{
-							title: "Starts / Ends",
-							key: "seasonDates",
-							sorter: (a, b) =>
-								Number(a.season.startsAt?.seconds ?? 0n) -
-								Number(b.season.startsAt?.seconds ?? 0n),
-							render: (_, row) =>
-								`${formatTimestamp(row.season.startsAt)} - ${formatTimestamp(row.season.endsAt)}`,
-						},
-						{
-							title: "Series",
-							dataIndex: "seriesName",
-							key: "seriesName",
-							sorter: (a, b) =>
-								a.seriesName.localeCompare(b.seriesName),
-						},
-						{
-							title: "Simulation",
-							dataIndex: "simulationName",
-							key: "simulationName",
-							sorter: (a, b) =>
-								a.simulationName.localeCompare(
-									b.simulationName,
-								),
-						},
-						{
-							title: "Actions",
-							key: "actions",
-							render: (_, row) => (
-								<Space>
-									<Button
-										size="small"
-										icon={<SettingOutlined />}
-										onClick={() =>
-											navigate(
-												`/seasons/${row.season.id}/manage`,
-											)
-										}
-									>
-										Manage
-									</Button>
-									<Button
-										size="small"
-										icon={<EditOutlined />}
-										onClick={() =>
-											navigate(
-												`/seasons/${row.season.id}/edit`,
-											)
-										}
-									>
-										Edit
-									</Button>
-									<Button
-										size="small"
-										onClick={() =>
-											navigate(
-												`/seasons/${row.season.id}/cars`,
-											)
-										}
-									>
-										Cars
-									</Button>
-									{row.season.isMulticlass && (
-										<Button
-											size="small"
-											onClick={() =>
-												navigate(
-													`/seasons/${row.season.id}/car-classes`,
-												)
-											}
-										>
-											Car classes
-										</Button>
-									)}
-								</Space>
-							),
-						},
-					]}
+					columns={seasonColumns}
+				/>
+			</Card>
+
+			<Card title="Inactive Seasons" style={{ marginTop: 16 }}>
+				<Table<SeasonOverviewItem>
+					rowKey={(row) => row.season.id}
+					loading={isLoading}
+					dataSource={inactiveItems}
+					pagination={{ defaultPageSize: 20, showSizeChanger: true }}
+					columns={seasonColumns}
 				/>
 			</Card>
 		</Space>
