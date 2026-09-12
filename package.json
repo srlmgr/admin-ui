@@ -13,7 +13,7 @@
     "test:no-watch": "vitest run"
   },
   "dependencies": {
-    "@ant-design/icons": "^6.3.2",
+    "@ant-design/icons": "^6.3.4",
     "@buf/srlmgr_api.bufbuild_es": "2.15.0-20260912070732-9c3ae5e3bc85.1",
     "@bufbuild/protobuf": "^2.15.0",
     "@connectrpc/connect": "^2.1.2",
