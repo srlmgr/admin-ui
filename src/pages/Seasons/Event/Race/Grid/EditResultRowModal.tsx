@@ -23,6 +23,7 @@ type EditResultRowFormValues = {
 	qualiTimeMs: number;
 	fastestLapTimeMs: number;
 	incidents: number;
+	offtracks: number;
 	totalTimeMs: number;
 	state: ResultEntry["state"];
 	adminNotes: string;
@@ -69,6 +70,7 @@ export function EditResultRowModal({
 			qualiTimeMs: row.qualiTimeMs,
 			fastestLapTimeMs: row.fastestLapTimeMs,
 			incidents: row.incidents,
+			offtracks: row.offtracks,
 			totalTimeMs: row.totalTimeMs,
 			state: row.state,
 			adminNotes: row.adminNotes,
@@ -163,17 +165,22 @@ export function EditResultRowModal({
 				</Row>
 
 				<Row gutter={8}>
-					<Col span={8}>
+					<Col span={6}>
 						<Form.Item label="Inc" name="incidents">
 							<InputNumber min={0} style={{ width: "100%" }} />
 						</Form.Item>
 					</Col>
-					<Col span={8}>
+					<Col span={6}>
+						<Form.Item label="Offtracks" name="offtracks">
+							<InputNumber min={0} style={{ width: "100%" }} />
+						</Form.Item>
+					</Col>
+					<Col span={6}>
 						<Form.Item label="State" name="state">
 							<Select options={stateOptions} />
 						</Form.Item>
 					</Col>
-					<Col span={8}>
+					<Col span={6}>
 						<Form.Item
 							label="Guest"
 							name="isGuestDriver"

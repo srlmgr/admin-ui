@@ -362,6 +362,14 @@ export function GridPage() {
 				// width: 64,
 			},
 			{
+				title: "Offtracks",
+				dataIndex: "offtracks",
+				key: "offtracks",
+				align: "right" as const,
+				sorter: (a: ResultEntry, b: ResultEntry) =>
+					compareNumber(a, b, (row) => row.offtracks),
+			},
+			{
 				title: "Total",
 				dataIndex: "totalTimeMs",
 				key: "totalTimeMs",
