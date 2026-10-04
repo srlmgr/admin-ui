@@ -49,7 +49,8 @@ type PolicyType =
 	| "leastIncidents"
 	| "fastestLap"
 	| "topNFinisher"
-	| "incidentsExceeded";
+	| "incidentsExceeded"
+	| "offtracksExceeded";
 
 type DraftTable = {
 	id: string;
@@ -62,11 +63,19 @@ type DraftThresholdRule = {
 	penaltyPercent: number;
 };
 
+type DraftOfftrackRule = {
+	id: string;
+	threshold: number;
+	perExceedancePenalty: number;
+	globalPenalty: number;
+};
+
 type DraftPolicy = {
 	id: string;
 	type: PolicyType;
 	tables: DraftTable[];
 	rules: DraftThresholdRule[];
+	offtrackRules: DraftOfftrackRule[];
 };
 
 type DraftRaceSetting = {
@@ -98,12 +107,26 @@ function emptyThresholdRule(): DraftThresholdRule {
 	};
 }
 
+function emptyOfftrackRule(): DraftOfftrackRule {
+	return {
+		id: createId(),
+		threshold: 0,
+		perExceedancePenalty: 0,
+		globalPenalty: 0,
+	};
+}
+
 function createPolicy(type: PolicyType = "finishPos"): DraftPolicy {
+	const usesThresholdRules =
+		type === "incidentsExceeded" || type === "offtracksExceeded";
+
 	return {
 		id: createId(),
 		type,
-		tables: type === "incidentsExceeded" ? [] : [emptyTable()],
+		tables: usesThresholdRules ? [] : [emptyTable()],
 		rules: type === "incidentsExceeded" ? [emptyThresholdRule()] : [],
+		offtrackRules:
+			type === "offtracksExceeded" ? [emptyOfftrackRule()] : [],
 	};
 }
 
@@ -144,6 +167,8 @@ function policyTypeFromConfig(
 			return "topNFinisher";
 		case "incidentsExceeded":
 			return "incidentsExceeded";
+		case "offtracksExceeded":
+			return "offtracksExceeded";
 		default:
 			switch (policy.name) {
 				case PointPolicy.FINISH_POS:
@@ -158,6 +183,8 @@ function policyTypeFromConfig(
 					return "topNFinisher";
 				case PointPolicy.INCIDENTS_EXCEEDED:
 					return "incidentsExceeded";
+				case PointPolicy.OFFTRACKS_EXCEEDED:
+					return "offtracksExceeded";
 				default:
 					return "finishPos";
 			}
@@ -196,6 +223,32 @@ function raceSettingsToDraft(source: PointRaceSettings[]): DraftRaceSetting[] {
 												penaltyPercent:
 													rule.penaltyPercent * 100,
 											})),
+								offtrackRules: [],
+							};
+						}
+
+						if (type === "offtracksExceeded") {
+							const rules =
+								policy.config.case === "offtracksExceeded"
+									? policy.config.value.rules
+									: [];
+
+							return {
+								id: createId(),
+								type,
+								tables: [],
+								rules: [],
+								offtrackRules:
+									rules.length === 0
+										? [emptyOfftrackRule()]
+										: rules.map((rule) => ({
+												id: createId(),
+												threshold: rule.threshold,
+												perExceedancePenalty:
+													rule.perExceedancePenalty,
+												globalPenalty:
+													rule.globalPenalty,
+											})),
 							};
 						}
 
@@ -217,6 +270,7 @@ function raceSettingsToDraft(source: PointRaceSettings[]): DraftRaceSetting[] {
 											),
 										})),
 							rules: [],
+							offtrackRules: [],
 						};
 					}),
 	}));
@@ -236,6 +290,8 @@ function policyTypeToEnum(type: PolicyType): PointPolicy {
 			return PointPolicy.TOP_N_FINISHER;
 		case "incidentsExceeded":
 			return PointPolicy.INCIDENTS_EXCEEDED;
+		case "offtracksExceeded":
+			return PointPolicy.OFFTRACKS_EXCEEDED;
 	}
 }
 
@@ -259,6 +315,23 @@ function toPointRaceSettings(draft: DraftRaceSetting[]): PointRaceSettings[] {
 					};
 				}
 
+				if (policy.type === "offtracksExceeded") {
+					return {
+						name: policyTypeToEnum(policy.type),
+						config: {
+							case: "offtracksExceeded" as const,
+							value: {
+								rules: policy.offtrackRules.map((rule) => ({
+									threshold: rule.threshold,
+									perExceedancePenalty:
+										rule.perExceedancePenalty,
+									globalPenalty: rule.globalPenalty,
+								})),
+							},
+						},
+					};
+				}
+
 				return {
 					name: policyTypeToEnum(policy.type),
 					config: {
@@ -271,8 +344,7 @@ function toPointRaceSettings(draft: DraftRaceSetting[]): PointRaceSettings[] {
 					},
 				};
 			}),
-		}))
-		.filter((setting) => setting.name.length > 0) as PointRaceSettings[];
+		})) as PointRaceSettings[];
 }
 
 const policyOptions: Array<{ value: PolicyType; label: string }> = [
@@ -282,10 +354,11 @@ const policyOptions: Array<{ value: PolicyType; label: string }> = [
 	{ value: "fastestLap", label: "Fastest Lap" },
 	{ value: "topNFinisher", label: "Top N Finisher" },
 	{ value: "incidentsExceeded", label: "Incidents Exceeded" },
+	{ value: "offtracksExceeded", label: "Offtracks Exceeded" },
 ];
 
 const policyInputWidths: Record<
-	Exclude<PolicyType, "incidentsExceeded">,
+	Exclude<PolicyType, "incidentsExceeded" | "offtracksExceeded">,
 	number
 > = {
 	finishPos: 800,
@@ -296,7 +369,7 @@ const policyInputWidths: Record<
 };
 
 function getPolicyInputWidth(type: PolicyType): number | undefined {
-	if (type === "incidentsExceeded") {
+	if (type === "incidentsExceeded" || type === "offtracksExceeded") {
 		return undefined;
 	}
 
@@ -372,9 +445,7 @@ export function PointSystemEditPage() {
 			const values = await form.validateFields();
 			const payloadRaceSettings = toPointRaceSettings(raceSettings);
 			if (payloadRaceSettings.length === 0) {
-				throw new Error(
-					"Add at least one race setting and provide a name.",
-				);
+				throw new Error("Add at least one race setting.");
 			}
 			setIsSaving(true);
 
@@ -490,7 +561,8 @@ export function PointSystemEditPage() {
 							...policy,
 							type,
 							tables:
-								type === "incidentsExceeded"
+								type === "incidentsExceeded" ||
+								type === "offtracksExceeded"
 									? []
 									: policy.tables.length > 0
 										? policy.tables
@@ -500,6 +572,12 @@ export function PointSystemEditPage() {
 									? policy.rules.length > 0
 										? policy.rules
 										: [emptyThresholdRule()]
+									: [],
+							offtrackRules:
+								type === "offtracksExceeded"
+									? policy.offtrackRules.length > 0
+										? policy.offtrackRules
+										: [emptyOfftrackRule()]
 									: [],
 						};
 					}),
@@ -658,6 +736,96 @@ export function PointSystemEditPage() {
 											rules: policy.rules.filter(
 												(rule) => rule.id !== ruleId,
 											),
+										}
+									: policy,
+							),
+						}
+					: setting,
+			),
+		);
+	};
+
+	const addOfftrackRule = (settingId: string, policyId: string) => {
+		setRaceSettings((current) =>
+			current.map((setting) =>
+				setting.id === settingId
+					? {
+							...setting,
+							policies: setting.policies.map((policy) =>
+								policy.id === policyId
+									? {
+											...policy,
+											offtrackRules: [
+												...policy.offtrackRules,
+												emptyOfftrackRule(),
+											],
+										}
+									: policy,
+							),
+						}
+					: setting,
+			),
+		);
+	};
+
+	const updateOfftrackRule = (
+		settingId: string,
+		policyId: string,
+		ruleId: string,
+		patch: Partial<
+			Pick<
+				DraftOfftrackRule,
+				"threshold" | "perExceedancePenalty" | "globalPenalty"
+			>
+		>,
+	) => {
+		setRaceSettings((current) =>
+			current.map((setting) =>
+				setting.id === settingId
+					? {
+							...setting,
+							policies: setting.policies.map((policy) =>
+								policy.id === policyId
+									? {
+											...policy,
+											offtrackRules:
+												policy.offtrackRules.map(
+													(rule) =>
+														rule.id === ruleId
+															? {
+																	...rule,
+																	...patch,
+																}
+															: rule,
+												),
+										}
+									: policy,
+							),
+						}
+					: setting,
+			),
+		);
+	};
+
+	const removeOfftrackRule = (
+		settingId: string,
+		policyId: string,
+		ruleId: string,
+	) => {
+		setRaceSettings((current) =>
+			current.map((setting) =>
+				setting.id === settingId
+					? {
+							...setting,
+							policies: setting.policies.map((policy) =>
+								policy.id === policyId
+									? {
+											...policy,
+											offtrackRules:
+												policy.offtrackRules.filter(
+													(rule) =>
+														rule.id !== ruleId,
+												),
 										}
 									: policy,
 							),
@@ -972,6 +1140,147 @@ export function PointSystemEditPage() {
 																}
 																onClick={() =>
 																	addThresholdRule(
+																		setting.id,
+																		policy.id,
+																	)
+																}
+															>
+																Add Rule
+															</Button>
+														</Space>
+													) : policy.type ===
+														"offtracksExceeded" ? (
+														<Space
+															orientation="vertical"
+															size={8}
+															style={{
+																width: "100%",
+															}}
+														>
+															{policy.offtrackRules.map(
+																(rule) => (
+																	<Space
+																		key={
+																			rule.id
+																		}
+																		align="baseline"
+																		wrap
+																		style={{
+																			width: "100%",
+																		}}
+																	>
+																		<Text>
+																			Offtrack
+																			threshold
+																		</Text>
+																		<InputNumber
+																			min={
+																				0
+																			}
+																			precision={
+																				0
+																			}
+																			value={
+																				rule.threshold
+																			}
+																			onChange={(
+																				value,
+																			) =>
+																				updateOfftrackRule(
+																					setting.id,
+																					policy.id,
+																					rule.id,
+																					{
+																						threshold:
+																							value ??
+																							0,
+																					},
+																				)
+																			}
+																		/>
+																		<Text>
+																			Per-exceedance
+																			penalty
+																		</Text>
+																		<InputNumber
+																			min={
+																				0
+																			}
+																			precision={
+																				0
+																			}
+																			value={
+																				rule.perExceedancePenalty
+																			}
+																			onChange={(
+																				value,
+																			) =>
+																				updateOfftrackRule(
+																					setting.id,
+																					policy.id,
+																					rule.id,
+																					{
+																						perExceedancePenalty:
+																							value ??
+																							0,
+																					},
+																				)
+																			}
+																		/>
+																		<Text>
+																			Global
+																			penalty
+																		</Text>
+																		<InputNumber
+																			min={
+																				0
+																			}
+																			precision={
+																				0
+																			}
+																			value={
+																				rule.globalPenalty
+																			}
+																			onChange={(
+																				value,
+																			) =>
+																				updateOfftrackRule(
+																					setting.id,
+																					policy.id,
+																					rule.id,
+																					{
+																						globalPenalty:
+																							value ??
+																							0,
+																					},
+																				)
+																			}
+																		/>
+																		<Button
+																			type="text"
+																			danger
+																			icon={
+																				<DeleteOutlined />
+																			}
+																			onClick={() =>
+																				removeOfftrackRule(
+																					setting.id,
+																					policy.id,
+																					rule.id,
+																				)
+																			}
+																		/>
+																	</Space>
+																),
+															)}
+
+															<Button
+																type="dashed"
+																icon={
+																	<PlusOutlined />
+																}
+																onClick={() =>
+																	addOfftrackRule(
 																		setting.id,
 																		policy.id,
 																	)

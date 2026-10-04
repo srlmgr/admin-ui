@@ -1,8 +1,13 @@
 import { getBookingEntries, type BookingEntriesScope } from "@/api/bookings";
-import { addPenalty, deletePenalty } from "@/api/events";
+import {
+	addPenalty,
+	deletePenalty,
+	type AddPenaltyInput,
+} from "@/api/events";
 import { listSeasonDrivers, listSeasonTeams } from "@/api/seasons";
 import {
 	DeleteOutlined,
+	EditOutlined,
 	PlusOutlined,
 	ReloadOutlined,
 } from "@ant-design/icons";
@@ -118,6 +123,9 @@ export function GridPenaltiesSection({
 	const [isLoading, setIsLoading] = useState(false);
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
+	const [editingPenalty, setEditingPenalty] = useState<PenaltyRow | null>(
+		null,
+	);
 	const [deletingPenaltyId, setDeletingPenaltyId] = useState<number | null>(
 		null,
 	);
@@ -176,13 +184,29 @@ export function GridPenaltiesSection({
 	const targetLabel = isSeasonTeamBased ? "Team" : "Driver";
 
 	const handleOpenModal = useCallback(() => {
+		setEditingPenalty(null);
 		form.resetFields();
 		form.setFieldsValue({ penaltyPoints: 1 });
 		setIsModalOpen(true);
 	}, [form]);
 
+	const handleEditPenalty = useCallback(
+		(row: PenaltyRow) => {
+			setEditingPenalty(row);
+			form.resetFields();
+			form.setFieldsValue({
+				targetId: row.targetId,
+				penaltyPoints: Math.abs(row.points),
+				reason: row.description,
+			});
+			setIsModalOpen(true);
+		},
+		[form],
+	);
+
 	const handleCancel = useCallback(() => {
 		setIsModalOpen(false);
+		setEditingPenalty(null);
 		form.resetFields();
 	}, [form]);
 
@@ -191,16 +215,63 @@ export function GridPenaltiesSection({
 			const values = await form.validateFields();
 			setIsSaving(true);
 
-			await addPenalty({
+			const replacement: AddPenaltyInput = {
 				scope: { case: "raceGridId", value: scope.value },
 				target: isSeasonTeamBased
 					? { case: "teamId", value: values.targetId }
 					: { case: "driverId", value: values.targetId },
 				penaltyPoints: -Math.abs(values.penaltyPoints),
 				reason: values.reason.trim(),
-			});
-			void message.success("Penalty added.");
+			};
+
+			if (editingPenalty) {
+				let oldPenaltyDeleted = false;
+				try {
+					await deletePenalty(editingPenalty.id);
+					oldPenaltyDeleted = true;
+					await addPenalty(replacement);
+				} catch (error) {
+					if (oldPenaltyDeleted) {
+						try {
+							await addPenalty({
+								scope: {
+									case: "raceGridId",
+									value: scope.value,
+								},
+								target:
+									editingPenalty.targetType ===
+									BookingTargetType.TEAM
+										? {
+												case: "teamId",
+												value: editingPenalty.targetId,
+											}
+										: {
+												case: "driverId",
+												value: editingPenalty.targetId,
+											},
+								penaltyPoints: editingPenalty.points,
+								reason: editingPenalty.description,
+							});
+						} catch (restoreError) {
+							throw new Error(
+								`Failed to replace penalty: ${String(error)}. Failed to restore the original penalty: ${String(restoreError)}`,
+								{ cause: restoreError },
+							);
+						}
+						throw new Error(
+							`Failed to replace penalty; the original penalty was restored: ${String(error)}`,
+							{ cause: error },
+						);
+					}
+					throw error;
+				}
+				void message.success("Penalty updated.");
+			} else {
+				await addPenalty(replacement);
+				void message.success("Penalty added.");
+			}
 			setIsModalOpen(false);
+			setEditingPenalty(null);
 			form.resetFields();
 			await loadPenalties();
 		} catch (error) {
@@ -211,11 +282,20 @@ export function GridPenaltiesSection({
 			) {
 				return;
 			}
-			void message.error(`Failed to add penalty: ${String(error)}`);
+			await loadPenalties();
+			void message.error(
+				`Failed to ${editingPenalty ? "update" : "add"} penalty: ${String(error)}`,
+			);
 		} finally {
 			setIsSaving(false);
 		}
-	}, [form, isSeasonTeamBased, loadPenalties, scope.value]);
+	}, [
+		editingPenalty,
+		form,
+		isSeasonTeamBased,
+		loadPenalties,
+		scope.value,
+	]);
 
 	const handleDeletePenalty = useCallback(
 		async (row: PenaltyRow) => {
@@ -263,23 +343,35 @@ export function GridPenaltiesSection({
 			title: "Actions",
 			key: "actions",
 			render: (_: unknown, row: PenaltyRow) => (
-				<Popconfirm
-					title="Delete penalty"
-					description={`Delete penalty for ${row.targetName}?`}
-					onConfirm={() => void handleDeletePenalty(row)}
-					okText="Delete"
-					okButtonProps={{ danger: true }}
-				>
+				<Space size={4}>
 					<Button
 						type="text"
-						danger
 						size="small"
-						icon={<DeleteOutlined />}
-						loading={deletingPenaltyId === row.id}
+						icon={<EditOutlined />}
+						onClick={() => handleEditPenalty(row)}
+						disabled={isSaving || deletingPenaltyId !== null}
 					>
-						Delete
+						Edit
 					</Button>
-				</Popconfirm>
+					<Popconfirm
+						title="Delete penalty"
+						description={`Delete penalty for ${row.targetName}?`}
+						onConfirm={() => void handleDeletePenalty(row)}
+						okText="Delete"
+						okButtonProps={{ danger: true }}
+					>
+						<Button
+							type="text"
+							danger
+							size="small"
+							icon={<DeleteOutlined />}
+							loading={deletingPenaltyId === row.id}
+							disabled={isSaving}
+						>
+							Delete
+						</Button>
+					</Popconfirm>
+				</Space>
 			),
 		},
 	];
@@ -319,11 +411,11 @@ export function GridPenaltiesSection({
 			/>
 
 			<Modal
-				title="New penalty"
+				title={editingPenalty ? "Edit penalty" : "New penalty"}
 				open={isModalOpen}
 				onCancel={handleCancel}
 				onOk={() => void handleSubmit()}
-				okText="Add"
+				okText={editingPenalty ? "Save" : "Add"}
 				okButtonProps={{ loading: isSaving }}
 				destroyOnHidden
 			>
@@ -345,7 +437,21 @@ export function GridPenaltiesSection({
 						<Select
 							showSearch
 							placeholder={`Select ${targetLabel.toLowerCase()}`}
-							options={sourceOptions}
+							options={
+								editingPenalty &&
+								!sourceOptions.some(
+									(option) =>
+										option.value === editingPenalty.targetId,
+								)
+									? [
+											...sourceOptions,
+											{
+												value: editingPenalty.targetId,
+												label: editingPenalty.targetName,
+											},
+										]
+									: sourceOptions
+							}
 							optionFilterProp="label"
 							filterOption={(input, option) =>
 								String(option?.label ?? "")
