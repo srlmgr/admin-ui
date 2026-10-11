@@ -13,11 +13,15 @@ import {
 	type RaceGrid,
 	type ResultEntry,
 } from "@buf/srlmgr_api.bufbuild_es/backend/common/v1/common_pb";
-import type { GetPreprocessPreviewResponse } from "@buf/srlmgr_api.bufbuild_es/backend/import/v1/import_pb";
+import type {
+	GetPreprocessPreviewResponse,
+	UpdatePenaltyRequest,
+} from "@buf/srlmgr_api.bufbuild_es/backend/import/v1/import_pb";
 import {
 	AddPenaltyRequestSchema,
 	DeletePenaltyRequestSchema,
 	PenaltyTargetSchema,
+	UpdatePenaltyRequestSchema,
 	type AddPenaltyRequest,
 	type DeletePenaltyRequest,
 	type PenaltyTarget,
@@ -172,7 +176,7 @@ export async function applyRaceGridResultEdits(input: {
 	});
 }
 
-export type AddPenaltyInput = {
+export type PenaltyInput = {
 	scope:
 		| { case: "eventId"; value: number }
 		| { case: "raceId"; value: number }
@@ -184,7 +188,7 @@ export type AddPenaltyInput = {
 	reason: string;
 };
 
-export async function addPenalty(input: AddPenaltyInput): Promise<void> {
+export async function addPenalty(input: PenaltyInput): Promise<void> {
 	const target: PenaltyTarget = create(PenaltyTargetSchema, {
 		scope: input.scope,
 		target: input.target,
@@ -197,6 +201,24 @@ export async function addPenalty(input: AddPenaltyInput): Promise<void> {
 	});
 
 	await getImportClient().addPenalty(payload);
+}
+export async function updatePenalty(
+	penaltyId: number,
+	input: PenaltyInput,
+): Promise<void> {
+	const target: PenaltyTarget = create(PenaltyTargetSchema, {
+		scope: input.scope,
+		target: input.target,
+	});
+
+	const payload: UpdatePenaltyRequest = create(UpdatePenaltyRequestSchema, {
+		penaltyId: penaltyId,
+		target,
+		penaltyPoints: input.penaltyPoints,
+		reason: input.reason,
+	});
+
+	await getImportClient().updatePenalty(payload);
 }
 
 export async function deletePenalty(penaltyId: number): Promise<void> {

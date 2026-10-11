@@ -2,7 +2,8 @@ import { getBookingEntries, type BookingEntriesScope } from "@/api/bookings";
 import {
 	addPenalty,
 	deletePenalty,
-	type AddPenaltyInput,
+	updatePenalty,
+	type PenaltyInput,
 } from "@/api/events";
 import { listSeasonDrivers, listSeasonTeams } from "@/api/seasons";
 import {
@@ -215,7 +216,7 @@ export function GridPenaltiesSection({
 			const values = await form.validateFields();
 			setIsSaving(true);
 
-			const replacement: AddPenaltyInput = {
+			const replacement: PenaltyInput = {
 				scope: { case: "raceGridId", value: scope.value },
 				target: isSeasonTeamBased
 					? { case: "teamId", value: values.targetId }
@@ -225,46 +226,7 @@ export function GridPenaltiesSection({
 			};
 
 			if (editingPenalty) {
-				let oldPenaltyDeleted = false;
-				try {
-					await deletePenalty(editingPenalty.id);
-					oldPenaltyDeleted = true;
-					await addPenalty(replacement);
-				} catch (error) {
-					if (oldPenaltyDeleted) {
-						try {
-							await addPenalty({
-								scope: {
-									case: "raceGridId",
-									value: scope.value,
-								},
-								target:
-									editingPenalty.targetType ===
-									BookingTargetType.TEAM
-										? {
-												case: "teamId",
-												value: editingPenalty.targetId,
-											}
-										: {
-												case: "driverId",
-												value: editingPenalty.targetId,
-											},
-								penaltyPoints: editingPenalty.points,
-								reason: editingPenalty.description,
-							});
-						} catch (restoreError) {
-							throw new Error(
-								`Failed to replace penalty: ${String(error)}. Failed to restore the original penalty: ${String(restoreError)}`,
-								{ cause: restoreError },
-							);
-						}
-						throw new Error(
-							`Failed to replace penalty; the original penalty was restored: ${String(error)}`,
-							{ cause: error },
-						);
-					}
-					throw error;
-				}
+				await updatePenalty(editingPenalty.id, replacement);
 				void message.success("Penalty updated.");
 			} else {
 				await addPenalty(replacement);
@@ -289,13 +251,7 @@ export function GridPenaltiesSection({
 		} finally {
 			setIsSaving(false);
 		}
-	}, [
-		editingPenalty,
-		form,
-		isSeasonTeamBased,
-		loadPenalties,
-		scope.value,
-	]);
+	}, [editingPenalty, form, isSeasonTeamBased, loadPenalties, scope.value]);
 
 	const handleDeletePenalty = useCallback(
 		async (row: PenaltyRow) => {
@@ -441,7 +397,8 @@ export function GridPenaltiesSection({
 								editingPenalty &&
 								!sourceOptions.some(
 									(option) =>
-										option.value === editingPenalty.targetId,
+										option.value ===
+										editingPenalty.targetId,
 								)
 									? [
 											...sourceOptions,
