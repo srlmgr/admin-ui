@@ -12,8 +12,8 @@ importers:
         specifier: ^6.3.4
         version: 6.3.4(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@buf/srlmgr_api.bufbuild_es':
-        specifier: 2.16.0-20261011061427-54e80c80611a.1
-        version: 2.16.0-20261011061427-54e80c80611a.1(@bufbuild/protobuf@2.16.0)
+        specifier: 2.16.0-20261017103809-5e2b6ac19e2f.1
+        version: 2.16.0-20261017103809-5e2b6ac19e2f.1(@bufbuild/protobuf@2.16.0)
       '@bufbuild/protobuf':
         specifier: ^2.16.0
         version: 2.16.0
@@ -223,8 +223,8 @@ packages:
     resolution: {integrity: sha512-0GEz8qJWokkUVYQYRukmkSHIFNoBH8QTreeHrAFbvz1XFYc3Y+puhMs8PQ5x8GNugiC2l5jvDBXKLbBIByeSBw==}
     hasBin: true
 
-  '@buf/srlmgr_api.bufbuild_es@2.16.0-20261011061427-54e80c80611a.1':
-    resolution: {tarball: https://buf.build/gen/npm/v1/@buf/srlmgr_api.bufbuild_es/-/srlmgr_api.bufbuild_es-2.16.0-20261011061427-54e80c80611a.1.tgz}
+  '@buf/srlmgr_api.bufbuild_es@2.16.0-20261017103809-5e2b6ac19e2f.1':
+    resolution: {tarball: https://buf.build/gen/npm/v1/@buf/srlmgr_api.bufbuild_es/-/srlmgr_api.bufbuild_es-2.16.0-20261017103809-5e2b6ac19e2f.1.tgz}
     peerDependencies:
       '@bufbuild/protobuf': ^2.16.0
 
@@ -1961,7 +1961,7 @@ snapshots:
     dependencies:
       css-tree: 3.2.1
 
-  '@buf/srlmgr_api.bufbuild_es@2.16.0-20261011061427-54e80c80611a.1(@bufbuild/protobuf@2.16.0)':
+  '@buf/srlmgr_api.bufbuild_es@2.16.0-20261017103809-5e2b6ac19e2f.1(@bufbuild/protobuf@2.16.0)':
     dependencies:
       '@bufbuild/protobuf': 2.16.0
 

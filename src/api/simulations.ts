@@ -58,4 +58,5 @@ export const AVAILABLE_IMPORT_FORMATS = [
 	{ value: ImportFormat.JSON, label: "JSON" },
 	{ value: ImportFormat.CSV, label: "CSV" },
 	{ value: ImportFormat.XML, label: "XML" },
+	{ value: ImportFormat.API, label: "API" },
 ];
