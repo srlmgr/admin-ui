@@ -5,7 +5,10 @@ import {
 	listRaces,
 	resolveMappings,
 	uploadGridResults,
+	uploadGridResultsViaApi,
 } from "@/api/events";
+import { listSimulations } from "@/api/simulations";
+import { getApiImportConfig } from "@/pages/Seasons/Event/Race/Grid/apiImportConfig";
 import { listSeasonEvents } from "@/api/seasons";
 import { SeasonEntityBreadcrumbs } from "@/pages/Seasons/components/SeasonEntityBreadcrumbs";
 import { BookingEntriesTable } from "@/pages/Seasons/Event/components/BookingEntriesTable";
@@ -18,6 +21,7 @@ import {
 	UploadOutlined,
 } from "@ant-design/icons";
 import {
+	ImportFormat,
 	ResultEntryState,
 	type ResultEntry,
 	type UnresolvedMapping,
@@ -26,7 +30,9 @@ import type { GetPreprocessPreviewResponse } from "@buf/srlmgr_api.bufbuild_es/b
 import {
 	Button,
 	Card,
+	InputNumber,
 	message,
+	Modal,
 	Popconfirm,
 	Space,
 	Table,
@@ -103,6 +109,12 @@ export function GridPage() {
 	const [editingRow, setEditingRow] = useState<ResultEntry | null>(null);
 	const [isSavingEdit, setIsSavingEdit] = useState(false);
 	const [isValidating, setIsValidating] = useState(false);
+	const [simulationName, setSimulationName] = useState<string>();
+	const [supportsApiImport, setSupportsApiImport] = useState(false);
+	const [isApiModalOpen, setIsApiModalOpen] = useState(false);
+	const [apiExternalId, setApiExternalId] = useState<number | null>(null);
+	const [isApiUploading, setIsApiUploading] = useState(false);
+	const apiImportConfig = getApiImportConfig(simulationName);
 	const [unresolvedMappingsData, setUnresolvedMappingsData] = useState<
 		UnresolvedMapping[]
 	>([]);
@@ -137,6 +149,22 @@ export function GridPage() {
 			setUnresolvedMappingsData(
 				getDistinctUnresolvedMappings(nextPreview.unresolvedMappings),
 			);
+			const simulationId = seasonEventsData.series?.simulationId;
+			if (simulationId) {
+				try {
+					const simulation = (await listSimulations()).find(
+						(item) => item.id === simulationId,
+					);
+					setSimulationName(simulation?.name);
+					setSupportsApiImport(
+						simulation?.supportedFormats.some(
+							(f) => f.format === ImportFormat.API,
+						) ?? false,
+					);
+				} catch {
+					setSupportsApiImport(false);
+				}
+			}
 			setSeriesId(seasonEventsData.series?.id ?? null);
 			setSeriesName(
 				seasonEventsData.series?.name ??
@@ -182,6 +210,23 @@ export function GridPage() {
 		() => unresolvedMappingsData,
 		[unresolvedMappingsData],
 	);
+
+	const handleApiUpload = async () => {
+		if (apiExternalId === null) {
+			return;
+		}
+		setIsApiUploading(true);
+		try {
+			await uploadGridResultsViaApi(gridId, String(apiExternalId));
+			void message.success("API upload completed");
+			setIsApiModalOpen(false);
+			await loadResults();
+		} catch (error) {
+			void message.error(`API upload failed: ${String(error)}`);
+		} finally {
+			setIsApiUploading(false);
+		}
+	};
 
 	const handleDeleteRow = useCallback(
 		async (row: ResultEntry) => {
@@ -514,6 +559,31 @@ export function GridPage() {
 				</Title>
 			</Space>
 
+			<Modal
+				title="API upload"
+				open={isApiModalOpen}
+				okText="Upload"
+				okButtonProps={{ disabled: apiExternalId === null }}
+				confirmLoading={isApiUploading}
+				onCancel={() => setIsApiModalOpen(false)}
+				onOk={() => void handleApiUpload()}
+			>
+				<Space direction="vertical" style={{ width: "100%" }}>
+					<Typography.Text>{apiImportConfig?.label}</Typography.Text>
+					<InputNumber
+						style={{ width: "100%" }}
+						min={1}
+						precision={0}
+						value={apiExternalId}
+						onChange={(value) =>
+							setApiExternalId(
+								typeof value === "number" ? value : null,
+							)
+						}
+					/>
+				</Space>
+			</Modal>
+
 			<Card
 				title="Actions"
 				extra={
@@ -554,6 +624,16 @@ export function GridPage() {
 								Upload results
 							</Button>
 						</Upload>
+						{supportsApiImport && apiImportConfig ? (
+							<Button
+								onClick={() => {
+									setApiExternalId(null);
+									setIsApiModalOpen(true);
+								}}
+							>
+								API upload
+							</Button>
+						) : null}
 					</Space>
 				}
 			>

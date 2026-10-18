@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@ant-design/icons": "^6.3.4",
-    "@buf/srlmgr_api.bufbuild_es": "2.16.0-20261011061427-54e80c80611a.1",
+    "@buf/srlmgr_api.bufbuild_es": "2.16.0-20261017103809-5e2b6ac19e2f.1",
     "@bufbuild/protobuf": "^2.16.0",
     "@connectrpc/connect": "^2.2.0",
     "@connectrpc/connect-web": "^2.2.0",

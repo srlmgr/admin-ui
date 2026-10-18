@@ -7,6 +7,7 @@ import {
 import { getConfig } from "@/config";
 import {
 	RaceSessionType,
+	ImportFormat,
 	SkipMode,
 	SummaryTargetType,
 	type Race,
@@ -253,4 +254,15 @@ export async function uploadGridResults(
 		const text = await response.text().catch(() => response.statusText);
 		throw new Error(`Upload failed (${response.status}): ${text}`);
 	}
+}
+
+export async function uploadGridResultsViaApi(
+	gridId: number,
+	externalId: string,
+): Promise<void> {
+	await getImportClient().uploadResultsFile({
+		raceGridId: gridId,
+		importFormat: ImportFormat.API,
+		payload: new TextEncoder().encode(externalId),
+	});
 }
