@@ -169,7 +169,7 @@ export function GridPenaltiesSection({
 		return bookingEntries
 			.filter(
 				(entry) =>
-					entry.sourceType === BookingSourceType.PENALTY_POINTS,
+					entry.sourceType === BookingSourceType.STEWARD_PENALTY,
 			)
 			.map((entry) => ({
 				...entry,

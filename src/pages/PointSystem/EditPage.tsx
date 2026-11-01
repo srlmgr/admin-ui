@@ -13,6 +13,7 @@ import {
 	Alert,
 	Button,
 	Card,
+	Checkbox,
 	Divider,
 	Form,
 	Input,
@@ -21,6 +22,7 @@ import {
 	Select,
 	Space,
 	Switch,
+	Tooltip,
 	Typography,
 	message,
 } from "antd";
@@ -28,6 +30,9 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 const { Title, Text } = Typography;
+
+const AFFECTS_SKIP_CALC_TOOLTIP =
+	"If this is true, the points for this penalty will be substracted from the gained points. In general steward penalties should not affect the selection of a skip event so their setting is mostly false whereas race penalties such as Offtracks exceeded should reduce the points to be considered for a skip event";
 
 type PointSystemFormValues = {
 	name: string;
@@ -50,7 +55,8 @@ type PolicyType =
 	| "fastestLap"
 	| "topNFinisher"
 	| "incidentsExceeded"
-	| "offtracksExceeded";
+	| "offtracksExceeded"
+	| "stewardPenalty";
 
 type DraftTable = {
 	id: string;
@@ -61,6 +67,7 @@ type DraftThresholdRule = {
 	id: string;
 	threshold: number;
 	penaltyPercent: number;
+	affectsSkipResult: boolean;
 };
 
 type DraftOfftrackRule = {
@@ -68,6 +75,7 @@ type DraftOfftrackRule = {
 	threshold: number;
 	perExceedancePenalty: number;
 	globalPenalty: number;
+	affectsSkipResult: boolean;
 };
 
 type DraftPolicy = {
@@ -76,6 +84,7 @@ type DraftPolicy = {
 	tables: DraftTable[];
 	rules: DraftThresholdRule[];
 	offtrackRules: DraftOfftrackRule[];
+	stewardAffectsSkipResult: boolean;
 };
 
 type DraftRaceSetting = {
@@ -104,6 +113,7 @@ function emptyThresholdRule(): DraftThresholdRule {
 		id: createId(),
 		threshold: 0,
 		penaltyPercent: 0,
+		affectsSkipResult: true,
 	};
 }
 
@@ -113,6 +123,7 @@ function emptyOfftrackRule(): DraftOfftrackRule {
 		threshold: 0,
 		perExceedancePenalty: 0,
 		globalPenalty: 0,
+		affectsSkipResult: true,
 	};
 }
 
@@ -127,6 +138,7 @@ function createPolicy(type: PolicyType = "finishPos"): DraftPolicy {
 		rules: type === "incidentsExceeded" ? [emptyThresholdRule()] : [],
 		offtrackRules:
 			type === "offtracksExceeded" ? [emptyOfftrackRule()] : [],
+		stewardAffectsSkipResult: false,
 	};
 }
 
@@ -154,6 +166,10 @@ function parsePointTable(valuesText: string): number[] {
 function policyTypeFromConfig(
 	policy: PointRaceSettings["policies"][number],
 ): PolicyType {
+	if ((policy.config.case as string | undefined) === "stewardPenalty") {
+		return "stewardPenalty";
+	}
+
 	switch (policy.config.case) {
 		case "finishPos":
 			return "finishPos";
@@ -185,6 +201,8 @@ function policyTypeFromConfig(
 					return "incidentsExceeded";
 				case PointPolicy.OFFTRACKS_EXCEEDED:
 					return "offtracksExceeded";
+				case PointPolicy.STEWARD_PENALTY:
+					return "stewardPenalty";
 				default:
 					return "finishPos";
 			}
@@ -222,8 +240,11 @@ function raceSettingsToDraft(source: PointRaceSettings[]): DraftRaceSetting[] {
 												threshold: rule.threshold,
 												penaltyPercent:
 													rule.penaltyPercent * 100,
+												affectsSkipResult:
+													rule.affectsSkipCalc,
 											})),
 								offtrackRules: [],
+								stewardAffectsSkipResult: false,
 							};
 						}
 
@@ -248,7 +269,26 @@ function raceSettingsToDraft(source: PointRaceSettings[]): DraftRaceSetting[] {
 													rule.perExceedancePenalty,
 												globalPenalty:
 													rule.globalPenalty,
+												affectsSkipResult:
+													rule.affectsSkipCalc,
 											})),
+								stewardAffectsSkipResult: false,
+							};
+						}
+
+						if (type === "stewardPenalty") {
+							const config = policy.config as unknown as {
+								value?: { affectsSkipCalc?: boolean };
+							};
+
+							return {
+								id: createId(),
+								type,
+								tables: [],
+								rules: [],
+								offtrackRules: [],
+								stewardAffectsSkipResult:
+									config.value?.affectsSkipCalc ?? false,
 							};
 						}
 
@@ -271,6 +311,7 @@ function raceSettingsToDraft(source: PointRaceSettings[]): DraftRaceSetting[] {
 										})),
 							rules: [],
 							offtrackRules: [],
+							stewardAffectsSkipResult: false,
 						};
 					}),
 	}));
@@ -292,59 +333,73 @@ function policyTypeToEnum(type: PolicyType): PointPolicy {
 			return PointPolicy.INCIDENTS_EXCEEDED;
 		case "offtracksExceeded":
 			return PointPolicy.OFFTRACKS_EXCEEDED;
+		case "stewardPenalty":
+			return PointPolicy.STEWARD_PENALTY;
 	}
 }
 
 function toPointRaceSettings(draft: DraftRaceSetting[]): PointRaceSettings[] {
-	return draft
-		.map((setting) => ({
-			name: setting.name.trim(),
-			policies: setting.policies.map((policy) => {
-				if (policy.type === "incidentsExceeded") {
-					return {
-						name: policyTypeToEnum(policy.type),
-						config: {
-							case: "incidentsExceeded" as const,
-							value: {
-								rules: policy.rules.map((rule) => ({
-									threshold: rule.threshold,
-									penaltyPercent: rule.penaltyPercent / 100,
-								})),
-							},
-						},
-					};
-				}
-
-				if (policy.type === "offtracksExceeded") {
-					return {
-						name: policyTypeToEnum(policy.type),
-						config: {
-							case: "offtracksExceeded" as const,
-							value: {
-								rules: policy.offtrackRules.map((rule) => ({
-									threshold: rule.threshold,
-									perExceedancePenalty:
-										rule.perExceedancePenalty,
-									globalPenalty: rule.globalPenalty,
-								})),
-							},
-						},
-					};
-				}
-
+	return draft.map((setting) => ({
+		name: setting.name.trim(),
+		policies: setting.policies.map((policy) => {
+			if (policy.type === "incidentsExceeded") {
 				return {
 					name: policyTypeToEnum(policy.type),
 					config: {
-						case: policy.type,
+						case: "incidentsExceeded" as const,
 						value: {
-							tables: policy.tables.map((table) => ({
-								values: parsePointTable(table.values),
+							rules: policy.rules.map((rule) => ({
+								threshold: rule.threshold,
+								penaltyPercent: rule.penaltyPercent / 100,
+								affectsSkipCalc: rule.affectsSkipResult,
 							})),
 						},
 					},
 				};
-			}),
-		})) as PointRaceSettings[];
+			}
+
+			if (policy.type === "offtracksExceeded") {
+				return {
+					name: policyTypeToEnum(policy.type),
+					config: {
+						case: "offtracksExceeded" as const,
+						value: {
+							rules: policy.offtrackRules.map((rule) => ({
+								threshold: rule.threshold,
+								perExceedancePenalty: rule.perExceedancePenalty,
+								globalPenalty: rule.globalPenalty,
+								affectsSkipCalc: rule.affectsSkipResult,
+							})),
+						},
+					},
+				};
+			}
+
+			if (policy.type === "stewardPenalty") {
+				return {
+					name: policyTypeToEnum(policy.type),
+					config: {
+						case: "stewardPenalty" as const,
+						value: {
+							affectsSkipCalc: policy.stewardAffectsSkipResult,
+						},
+					},
+				};
+			}
+
+			return {
+				name: policyTypeToEnum(policy.type),
+				config: {
+					case: policy.type,
+					value: {
+						tables: policy.tables.map((table) => ({
+							values: parsePointTable(table.values),
+						})),
+					},
+				},
+			};
+		}),
+	})) as PointRaceSettings[];
 }
 
 const policyOptions: Array<{ value: PolicyType; label: string }> = [
@@ -355,10 +410,14 @@ const policyOptions: Array<{ value: PolicyType; label: string }> = [
 	{ value: "topNFinisher", label: "Top N Finisher" },
 	{ value: "incidentsExceeded", label: "Incidents Exceeded" },
 	{ value: "offtracksExceeded", label: "Offtracks Exceeded" },
+	{ value: "stewardPenalty", label: "Steward Penalty" },
 ];
 
 const policyInputWidths: Record<
-	Exclude<PolicyType, "incidentsExceeded" | "offtracksExceeded">,
+	Exclude<
+		PolicyType,
+		"incidentsExceeded" | "offtracksExceeded" | "stewardPenalty"
+	>,
 	number
 > = {
 	finishPos: 800,
@@ -369,7 +428,11 @@ const policyInputWidths: Record<
 };
 
 function getPolicyInputWidth(type: PolicyType): number | undefined {
-	if (type === "incidentsExceeded" || type === "offtracksExceeded") {
+	if (
+		type === "incidentsExceeded" ||
+		type === "offtracksExceeded" ||
+		type === "stewardPenalty"
+	) {
 		return undefined;
 	}
 
@@ -539,6 +602,27 @@ export function PointSystemEditPage() {
 		);
 	};
 
+	const updatePolicy = (
+		settingId: string,
+		policyId: string,
+		patch: Partial<Pick<DraftPolicy, "stewardAffectsSkipResult">>,
+	) => {
+		setRaceSettings((current) =>
+			current.map((setting) =>
+				setting.id === settingId
+					? {
+							...setting,
+							policies: setting.policies.map((policy) =>
+								policy.id === policyId
+									? { ...policy, ...patch }
+									: policy,
+							),
+						}
+					: setting,
+			),
+		);
+	};
+
 	const updatePolicyType = (
 		settingId: string,
 		policyId: string,
@@ -560,9 +644,14 @@ export function PointSystemEditPage() {
 						return {
 							...policy,
 							type,
+							stewardAffectsSkipResult:
+								type === "stewardPenalty"
+									? policy.stewardAffectsSkipResult
+									: false,
 							tables:
 								type === "incidentsExceeded" ||
-								type === "offtracksExceeded"
+								type === "offtracksExceeded" ||
+								type === "stewardPenalty"
 									? []
 									: policy.tables.length > 0
 										? policy.tables
@@ -693,7 +782,10 @@ export function PointSystemEditPage() {
 		policyId: string,
 		ruleId: string,
 		patch: Partial<
-			Pick<DraftThresholdRule, "threshold" | "penaltyPercent">
+			Pick<
+				DraftThresholdRule,
+				"threshold" | "penaltyPercent" | "affectsSkipResult"
+			>
 		>,
 	) => {
 		setRaceSettings((current) =>
@@ -775,7 +867,10 @@ export function PointSystemEditPage() {
 		patch: Partial<
 			Pick<
 				DraftOfftrackRule,
-				"threshold" | "perExceedancePenalty" | "globalPenalty"
+				| "threshold"
+				| "perExceedancePenalty"
+				| "globalPenalty"
+				| "affectsSkipResult"
 			>
 		>,
 	) => {
@@ -1115,6 +1210,36 @@ export function PointSystemEditPage() {
 																				)
 																			}
 																		/>
+																		<Tooltip
+																			title={
+																				AFFECTS_SKIP_CALC_TOOLTIP
+																			}
+																		>
+																			<Checkbox
+																				checked={
+																					rule.affectsSkipResult
+																				}
+																				onChange={(
+																					event,
+																				) =>
+																					updateThresholdRule(
+																						setting.id,
+																						policy.id,
+																						rule.id,
+																						{
+																							affectsSkipResult:
+																								event
+																									.target
+																									.checked,
+																						},
+																					)
+																				}
+																			>
+																				Affects
+																				skip
+																				calculation
+																			</Checkbox>
+																		</Tooltip>
 																		<Button
 																			type="text"
 																			danger
@@ -1149,7 +1274,7 @@ export function PointSystemEditPage() {
 															</Button>
 														</Space>
 													) : policy.type ===
-														"offtracksExceeded" ? (
+													  "offtracksExceeded" ? (
 														<Space
 															orientation="vertical"
 															size={8}
@@ -1256,6 +1381,36 @@ export function PointSystemEditPage() {
 																				)
 																			}
 																		/>
+																		<Tooltip
+																			title={
+																				AFFECTS_SKIP_CALC_TOOLTIP
+																			}
+																		>
+																			<Checkbox
+																				checked={
+																					rule.affectsSkipResult
+																				}
+																				onChange={(
+																					event,
+																				) =>
+																					updateOfftrackRule(
+																						setting.id,
+																						policy.id,
+																						rule.id,
+																						{
+																							affectsSkipResult:
+																								event
+																									.target
+																									.checked,
+																						},
+																					)
+																				}
+																			>
+																				Affects
+																				skip
+																				calculation
+																			</Checkbox>
+																		</Tooltip>
 																		<Button
 																			type="text"
 																			danger
@@ -1289,6 +1444,36 @@ export function PointSystemEditPage() {
 																Add Rule
 															</Button>
 														</Space>
+													) : policy.type ===
+													  "stewardPenalty" ? (
+														<Tooltip
+															title={
+																AFFECTS_SKIP_CALC_TOOLTIP
+															}
+														>
+															<Checkbox
+																checked={
+																	policy.stewardAffectsSkipResult
+																}
+																onChange={(
+																	event,
+																) =>
+																	updatePolicy(
+																		setting.id,
+																		policy.id,
+																		{
+																			stewardAffectsSkipResult:
+																				event
+																					.target
+																					.checked,
+																		},
+																	)
+																}
+															>
+																Affects skip
+																calculation
+															</Checkbox>
+														</Tooltip>
 													) : (
 														<Space
 															orientation="vertical"
