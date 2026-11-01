@@ -19,7 +19,7 @@
     "@connectrpc/connect": "^2.2.0",
     "@connectrpc/connect-web": "^2.2.0",
     "@reduxjs/toolkit": "^2.13.0",
-    "antd": "^6.6.6",
+    "antd": "^6.6.7",
     "dayjs": "^1.11.23",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
