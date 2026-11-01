@@ -341,7 +341,10 @@ export async function updateSeasonTeam(
 }
 
 export async function deleteSeasonTeam(teamId: number): Promise<boolean> {
-	const response = await getCommandClient().deleteTeam({ teamId });
+	const response = await getCommandClient().deleteTeam({
+		teamId,
+		cascade: true,
+	});
 	return response.deleted;
 }
 
