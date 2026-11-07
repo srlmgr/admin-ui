@@ -16,15 +16,15 @@
     "@ant-design/icons": "^6.3.4",
     "@buf/srlmgr_api.bufbuild_es": "2.16.0-20261101152004-442e194399ca.1",
     "@bufbuild/protobuf": "^2.16.0",
-    "@connectrpc/connect": "^2.2.0",
-    "@connectrpc/connect-web": "^2.2.0",
+    "@connectrpc/connect": "^2.3.0",
+    "@connectrpc/connect-web": "^2.3.0",
     "@reduxjs/toolkit": "^2.13.0",
-    "antd": "^6.6.7",
+    "antd": "^6.6.8",
     "dayjs": "^1.11.23",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "react-redux": "^9.3.0",
-    "react-router-dom": "^7.18.4"
+    "react-redux": "^9.3.1",
+    "react-router-dom": "^7.18.5"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
