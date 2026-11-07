@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import { resetTransport } from "./api/client";
 import { fetchCurrentUser } from "./api/currentUser";
+import { createLoginUrl } from "./auth/returnTo";
 import App from "./App.tsx";
 import { loadConfig } from "./config";
 import "./index.css";
@@ -43,7 +44,11 @@ function handleAuthFailure(): void {
 	store.dispatch(clearUser());
 
 	if (window.location.pathname !== "/login") {
-		window.location.replace("/login");
+		const returnTo =
+			window.location.pathname === "/callback"
+				? new URLSearchParams(window.location.search).get("returnTo")
+				: `${window.location.pathname}${window.location.search}${window.location.hash}`;
+		window.location.replace(createLoginUrl(returnTo));
 	}
 }
 

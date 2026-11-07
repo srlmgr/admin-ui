@@ -34,7 +34,7 @@ Unauthenticated User
         ↓
   Store user in Redux store
         ↓
-  Navigate to /users (or previous page)
+  Navigate to the originally requested page (or /users by default)
         ↓
   Protected routes now accessible
 ```
@@ -59,6 +59,11 @@ App.tsx
                 ├── /tracks → TracksPage
                 └── /cars → CarsPage
 ```
+
+When an unauthenticated user requests a protected URL, the app redirects them to
+`/login` with the original path, query string, and hash in a `returnTo` parameter.
+The login flow carries that value through the callback URL and returns the user to
+that page after authentication. Only same-origin app paths are accepted.
 
 ## Redux Store Setup
 

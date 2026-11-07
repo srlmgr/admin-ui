@@ -1,3 +1,4 @@
+import { getSafeReturnTo } from "@/auth/returnTo";
 import { getConfig } from "@/config";
 import { RootState } from "@/store";
 import { setError, setLoading } from "@/store/slices/authSlice";
@@ -5,7 +6,7 @@ import { LoginOutlined } from "@ant-design/icons";
 import { Alert, Button, Card, Space, Typography } from "antd";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Navigate } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router-dom";
 
 const { Title, Paragraph } = Typography;
 
@@ -14,6 +15,8 @@ export function LoginPage() {
 	const { isLoading, error, user } = useSelector(
 		(state: RootState) => state.auth,
 	);
+	const [searchParams] = useSearchParams();
+	const returnTo = getSafeReturnTo(searchParams.get("returnTo"));
 	const config = getConfig();
 	// Clear any lingering error on component mount
 	useEffect(() => {
@@ -25,9 +28,12 @@ export function LoginPage() {
 		dispatch(setError(""));
 
 		// Provide the frontend callback URL so backend can return here on success.
-		const callbackUrl = `${window.location.origin}/callback`;
+		const callback = new URL("/callback", window.location.origin);
+		if (returnTo) {
+			callback.searchParams.set("returnTo", returnTo);
+		}
+		const callbackUrl = callback.toString();
 		const params = new URLSearchParams({
-			callbackUrl,
 			callback_url: callbackUrl,
 		});
 
@@ -37,7 +43,7 @@ export function LoginPage() {
 
 	// Safety check: if somehow user is logged in, redirect
 	if (user) {
-		return <Navigate to="/users" replace />;
+		return <Navigate to={returnTo ?? "/"} replace />;
 	}
 
 	return (
