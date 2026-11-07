@@ -1,4 +1,5 @@
 import { RootState } from "@/store";
+import { createLoginUrl } from "@/auth/returnTo";
 import { clearUser } from "@/store/slices/authSlice";
 import { useThemeMode } from "@/theme/themeMode";
 import {
@@ -60,7 +61,14 @@ export function AppLayout() {
 
 	// Redirect to login if no user
 	if (!user) {
-		return <Navigate to="/login" replace />;
+		return (
+			<Navigate
+				to={createLoginUrl(
+					`${location.pathname}${location.search}${location.hash}`,
+				)}
+				replace
+			/>
+		);
 	}
 
 	const selectedKey = location.pathname.split("/")[1] || "users";
