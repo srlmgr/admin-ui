@@ -14,6 +14,7 @@ import { SeasonEntityBreadcrumbs } from "@/pages/Seasons/components/SeasonEntity
 import { BookingEntriesTable } from "@/pages/Seasons/Event/components/BookingEntriesTable";
 import { GridPenaltiesSection } from "@/pages/Seasons/Event/components/GridPenaltiesSection";
 import { EditResultRowModal } from "@/pages/Seasons/Event/Race/Grid/EditResultRowModal";
+import { formatUnresolvedMappingReason } from "@/pages/Seasons/Event/Race/Grid/unresolvedMappings";
 import {
 	ArrowLeftOutlined,
 	DeleteOutlined,
@@ -23,9 +24,10 @@ import {
 import {
 	ImportFormat,
 	ResultEntryState,
+	type BookingEntry,
 	type ResultEntry,
-	type UnresolvedMapping,
 } from "@buf/srlmgr_api.bufbuild_es/backend/common/v1/common_pb";
+import type { UnresolvedMapping } from "@buf/srlmgr_api.bufbuild_es/backend/common/v1/mapping_pb";
 import type { GetPreprocessPreviewResponse } from "@buf/srlmgr_api.bufbuild_es/backend/import/v1/import_pb";
 import {
 	Button,
@@ -73,19 +75,6 @@ function formatDurationFromMs(value: number): string {
 	return `${mm}:${ss}.${sss}`;
 }
 
-function getDistinctUnresolvedMappings(
-	unresolvedMappings: UnresolvedMapping[],
-): UnresolvedMapping[] {
-	const uniqueMappings = new Map<string, UnresolvedMapping>();
-	for (const item of unresolvedMappings) {
-		const key = `${item.mappingType}\u0000${item.sourceValue}`;
-		if (!uniqueMappings.has(key)) {
-			uniqueMappings.set(key, item);
-		}
-	}
-	return Array.from(uniqueMappings.values());
-}
-
 export function GridPage() {
 	const navigate = useNavigate();
 	const location = useLocation();
@@ -98,6 +87,9 @@ export function GridPage() {
 		null,
 	);
 	const [isLoading, setIsLoading] = useState(false);
+	const [bookingEntries, setBookingEntries] = useState<BookingEntry[]>([]);
+	const [bookingEntriesRefreshToken, setBookingEntriesRefreshToken] =
+		useState(0);
 	const [seriesId, setSeriesId] = useState<number | null>(null);
 	const [seriesName, setSeriesName] = useState<string>("");
 	const [seasonName, setSeasonName] = useState<string>("");
@@ -126,6 +118,33 @@ export function GridPage() {
 	const state = location.state as GridLocationState | null;
 	const stateGridName = state?.gridName;
 
+	const handleBookingEntriesLoaded = useCallback(
+		(entries: BookingEntry[]) => {
+			setBookingEntries(entries);
+		},
+		[],
+	);
+	const refreshBookingEntries = useCallback(() => {
+		setBookingEntriesRefreshToken((token) => token + 1);
+	}, []);
+
+	const refreshPreview = useCallback(async () => {
+		if (!isValidGridId) {
+			return;
+		}
+
+		setIsLoading(true);
+		try {
+			const nextPreview = await getPreprocessPreview({ gridId });
+			setPreview(nextPreview);
+			setUnresolvedMappingsData(nextPreview.unresolvedMappings);
+		} catch (error) {
+			void message.error(`Failed to load results: ${String(error)}`);
+		} finally {
+			setIsLoading(false);
+		}
+	}, [gridId, isValidGridId]);
+
 	const loadResults = useCallback(async () => {
 		if (
 			!isValidSeasonId ||
@@ -146,9 +165,7 @@ export function GridPage() {
 					listRaceGrids(raceId),
 				]);
 			setPreview(nextPreview);
-			setUnresolvedMappingsData(
-				getDistinctUnresolvedMappings(nextPreview.unresolvedMappings),
-			);
+			setUnresolvedMappingsData(nextPreview.unresolvedMappings);
 			const simulationId = seasonEventsData.series?.simulationId;
 			if (simulationId) {
 				try {
@@ -206,8 +223,19 @@ export function GridPage() {
 		[preview],
 	);
 
-	const unresolvedMappings: UnresolvedMapping[] = useMemo(
-		() => unresolvedMappingsData,
+	const unresolvedMappings = useMemo(
+		() =>
+			unresolvedMappingsData
+				.map((mapping, index) => ({ ...mapping, tableKey: index }))
+				.sort((a, b) => {
+					if (a.resultIndex === undefined) {
+						return b.resultIndex === undefined ? 0 : 1;
+					}
+					if (b.resultIndex === undefined) {
+						return -1;
+					}
+					return a.resultIndex - b.resultIndex;
+				}),
 		[unresolvedMappingsData],
 	);
 
@@ -220,7 +248,7 @@ export function GridPage() {
 			await uploadGridResultsViaApi(gridId, String(apiExternalId));
 			void message.success("API upload completed");
 			setIsApiModalOpen(false);
-			await loadResults();
+			await refreshPreview();
 		} catch (error) {
 			void message.error(`API upload failed: ${String(error)}`);
 		} finally {
@@ -244,7 +272,7 @@ export function GridPage() {
 					editedRows: remainingRows,
 				});
 				void message.success("Result row deleted");
-				await loadResults();
+				await refreshPreview();
 			} catch (error) {
 				void message.error(
 					`Failed to delete result row: ${String(error)}`,
@@ -253,7 +281,7 @@ export function GridPage() {
 				setDeletingRowId(null);
 			}
 		},
-		[gridId, isValidGridId, loadResults, results],
+		[gridId, isValidGridId, refreshPreview, results],
 	);
 
 	const handleEditRow = useCallback((row: ResultEntry) => {
@@ -281,7 +309,7 @@ export function GridPage() {
 				});
 				void message.success("Result row updated");
 				setEditingRow(null);
-				await loadResults();
+				await refreshPreview();
 			} catch (error) {
 				void message.error(
 					`Failed to update result row: ${String(error)}`,
@@ -290,7 +318,7 @@ export function GridPage() {
 				setIsSavingEdit(false);
 			}
 		},
-		[gridId, isValidGridId, loadResults, results],
+		[gridId, isValidGridId, refreshPreview, results],
 	);
 
 	const handleValidate = useCallback(async () => {
@@ -304,9 +332,7 @@ export function GridPage() {
 			await resolveMappings({ gridId });
 			const nextPreview = await getPreprocessPreview({ gridId });
 			setPreview(nextPreview);
-			setUnresolvedMappingsData(
-				getDistinctUnresolvedMappings(nextPreview.unresolvedMappings),
-			);
+			setUnresolvedMappingsData(nextPreview.unresolvedMappings);
 			void message.success("Validation completed");
 		} catch (error) {
 			void message.error(`Validation failed: ${String(error)}`);
@@ -490,22 +516,29 @@ export function GridPage() {
 	const unresolvedMappingColumns = useMemo(
 		() => [
 			{
+				title: "Pos",
+				dataIndex: "resultEntryId",
+				key: "position",
+				align: "left" as const,
+				render: (_resultEntryId: number | undefined, row: UnresolvedMapping) =>
+					results.find((result) => result.id === row.resultEntryId)
+						?.finishingPosition ?? "-",
+			},
+			{
 				title: "Mapping Type",
 				dataIndex: "mappingType",
 				key: "mappingType",
 				align: "left" as const,
-				sorter: (a: UnresolvedMapping, b: UnresolvedMapping) =>
-					a.mappingType.localeCompare(b.mappingType),
-				defaultSortOrder: "ascend" as const,
 			},
 			{
-				title: "Source Value",
-				dataIndex: "sourceValue",
-				key: "sourceValue",
+				title: "Info",
+				key: "reason",
 				align: "left" as const,
+				render: (_: unknown, row: UnresolvedMapping) =>
+					formatUnresolvedMappingReason(row),
 			},
 		],
-		[],
+		[results],
 	);
 
 	useEffect(() => {
@@ -610,7 +643,7 @@ export function GridPage() {
 									void message.success(
 										`Uploaded ${files.length} file${files.length === 1 ? "" : "s"}`,
 									);
-									await loadResults();
+									await refreshPreview();
 								} catch (error) {
 									void message.error(
 										`Upload failed: ${String(error)}`,
@@ -640,11 +673,9 @@ export function GridPage() {
 				{unresolvedMappings.length > 0 ? (
 					<>
 						<Title level={4}>Unresolved entities</Title>
-						<Table<UnresolvedMapping>
+						<Table<UnresolvedMapping & { tableKey: number }>
 							size="small"
-							rowKey={(row, index) =>
-								`${row.mappingType}-${row.sourceValue}-${String(index)}`
-							}
+							rowKey="tableKey"
 							loading={isLoading}
 							dataSource={unresolvedMappings}
 							pagination={false}
@@ -681,11 +712,15 @@ export function GridPage() {
 				scope={{ case: "gridId", value: gridId }}
 				seasonId={seasonId}
 				isSeasonTeamBased={isSeasonTeamBased}
+				bookingEntries={bookingEntries}
+				onRefreshBookingEntries={refreshBookingEntries}
 			/>
 
 			<Card title="Booking entries">
 				<BookingEntriesTable
 					scope={{ case: "gridId", value: gridId }}
+					refreshToken={bookingEntriesRefreshToken}
+					onEntriesLoaded={handleBookingEntriesLoaded}
 				/>
 			</Card>
 		</Space>

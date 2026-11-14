@@ -164,7 +164,7 @@ export async function resolveMappings(input: {
 	const response = await getImportClient().resolveMappings({
 		raceGridId: input.gridId,
 	});
-	return response.unresolvedMappings;
+	return response.unresolvedMappings.length;
 }
 
 export async function applyRaceGridResultEdits(input: {

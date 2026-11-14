@@ -1,4 +1,4 @@
-import { getBookingEntries, type BookingEntriesScope } from "@/api/bookings";
+import type { BookingEntriesScope } from "@/api/bookings";
 import {
 	addPenalty,
 	deletePenalty,
@@ -39,6 +39,8 @@ type GridPenaltiesSectionProps = {
 	scope: BookingEntriesScope;
 	seasonId: number;
 	isSeasonTeamBased: boolean;
+	bookingEntries: BookingEntry[];
+	onRefreshBookingEntries: () => void;
 };
 
 type PenaltyFormValues = {
@@ -116,9 +118,10 @@ export function GridPenaltiesSection({
 	scope,
 	seasonId,
 	isSeasonTeamBased,
+	bookingEntries,
+	onRefreshBookingEntries,
 }: GridPenaltiesSectionProps) {
 	const [form] = Form.useForm<PenaltyFormValues>();
-	const [bookingEntries, setBookingEntries] = useState<BookingEntry[]>([]);
 	const [drivers, setDrivers] = useState<Driver[]>([]);
 	const [teams, setTeams] = useState<Team[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
@@ -134,13 +137,10 @@ export function GridPenaltiesSection({
 	const loadPenalties = useCallback(async () => {
 		setIsLoading(true);
 		try {
-			const [bookingResponse, seasonDrivers, seasonTeams] =
-				await Promise.all([
-					getBookingEntries(scope),
-					listSeasonDrivers(seasonId),
-					listSeasonTeams(seasonId),
-				]);
-			setBookingEntries(bookingResponse.items);
+			const [seasonDrivers, seasonTeams] = await Promise.all([
+				listSeasonDrivers(seasonId),
+				listSeasonTeams(seasonId),
+			]);
 			setDrivers(seasonDrivers.flatMap((item) => item.drivers));
 			setTeams(seasonTeams.flatMap((item) => item.teams));
 		} catch (error) {
@@ -148,7 +148,7 @@ export function GridPenaltiesSection({
 		} finally {
 			setIsLoading(false);
 		}
-	}, [scope, seasonId]);
+	}, [seasonId]);
 
 	useEffect(() => {
 		const timeoutId = window.setTimeout(() => {
@@ -236,6 +236,7 @@ export function GridPenaltiesSection({
 			setEditingPenalty(null);
 			form.resetFields();
 			await loadPenalties();
+			onRefreshBookingEntries();
 		} catch (error) {
 			if (
 				typeof error === "object" &&
@@ -245,13 +246,21 @@ export function GridPenaltiesSection({
 				return;
 			}
 			await loadPenalties();
+			onRefreshBookingEntries();
 			void message.error(
 				`Failed to ${editingPenalty ? "update" : "add"} penalty: ${String(error)}`,
 			);
 		} finally {
 			setIsSaving(false);
 		}
-	}, [editingPenalty, form, isSeasonTeamBased, loadPenalties, scope.value]);
+	}, [
+		editingPenalty,
+		form,
+		isSeasonTeamBased,
+		loadPenalties,
+		onRefreshBookingEntries,
+		scope.value,
+	]);
 
 	const handleDeletePenalty = useCallback(
 		async (row: PenaltyRow) => {
@@ -260,6 +269,7 @@ export function GridPenaltiesSection({
 				await deletePenalty(row.id);
 				void message.success("Penalty deleted.");
 				await loadPenalties();
+				onRefreshBookingEntries();
 			} catch (error) {
 				void message.error(
 					`Failed to delete penalty: ${String(error)}`,
@@ -268,7 +278,7 @@ export function GridPenaltiesSection({
 				setDeletingPenaltyId(null);
 			}
 		},
-		[loadPenalties],
+		[loadPenalties, onRefreshBookingEntries],
 	);
 
 	const columns: TableColumnsType<PenaltyRow> = [
@@ -348,7 +358,10 @@ export function GridPenaltiesSection({
 					<Button
 						size="small"
 						icon={<ReloadOutlined />}
-						onClick={() => void loadPenalties()}
+						onClick={() => {
+							void loadPenalties();
+							onRefreshBookingEntries();
+						}}
 						loading={isLoading}
 					>
 						Refresh
