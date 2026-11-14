@@ -54,56 +54,104 @@ describe("unresolved mapping diagnostics", () => {
 			string,
 		][] = [
 			[
-				{ reason: { case: "sourceEntityNotFound", value: {
-					entityType: SourceEntityType.TRACK,
-					source: { id: "42", name: "Spa" },
-				} } },
+				{
+					reason: {
+						case: "sourceEntityNotFound",
+						value: {
+							entityType: SourceEntityType.TRACK,
+							source: { id: "42", name: "Spa" },
+						},
+					},
+				},
 				'Track ("Spa", source ID: 42) was not found.',
 			],
 			[
-				{ reason: { case: "seasonDriverNotActive", value: {
-					driverId: 7, sourceDriver: { name: "Alex" },
-				} } },
-				'Driver #7 ("Alex") is not active in the season.',
+				{
+					reason: {
+						case: "seasonDriverNotActive",
+						value: {
+							driverId: 7,
+							sourceDriver: { name: "Alex" },
+						},
+					},
+				},
+				'Driver with ID 7 ("Alex") is not active in the season.',
 			],
 			[
-				{ reason: { case: "seasonCarNotConfigured", value: {
-					carModelVariantId: 8, sourceCar: { id: "car-1" },
-				} } },
-				"Car model variant #8 (source ID: car-1) is not configured for the season.",
+				{
+					reason: {
+						case: "seasonCarNotConfigured",
+						value: {
+							carModelVariantId: 8,
+							sourceCar: { id: "car-1" },
+						},
+					},
+				},
+				"Car model variant ID 8 (source ID: car-1) is not configured for the season.",
 			],
 			[
-				{ reason: { case: "teamNotFound", value: {
-					sourceTeamName: "Racing",
-					driversChecked: [{ driverId: 9, sourceDriver: { name: "Sam" } }],
-				} } },
+				{
+					reason: {
+						case: "teamNotFound",
+						value: {
+							sourceTeamName: "Racing",
+							driversChecked: [
+								{ driverId: 9, sourceDriver: { name: "Sam" } },
+							],
+						},
+					},
+				},
 				'Team "Racing" was not found. Drivers checked: #9 ("Sam").',
 			],
 			[
-				{ reason: { case: "teamDriversMissing", value: { sourceTeamName: "Racing" } } },
+				{
+					reason: {
+						case: "teamDriversMissing",
+						value: { sourceTeamName: "Racing" },
+					},
+				},
 				'Team "Racing" has no drivers to match.',
 			],
 			[
-				{ reason: { case: "carClassNotConfigured", value: { carModelVariantId: 8 } } },
+				{
+					reason: {
+						case: "carClassNotConfigured",
+						value: { carModelVariantId: 8 },
+					},
+				},
 				"No car class is configured for car model variant #8.",
 			],
 			[
-				{ reason: { case: "carNumberMismatch", value: {
-					owner: { case: "driverId", value: 7 },
-					importedNumber: "01", configuredNumber: "",
-				} } },
-				'Imported car number "01" does not match the configured number for driver #7 ("").',
+				{
+					reason: {
+						case: "carNumberMismatch",
+						value: {
+							owner: { case: "driverId", value: 7 },
+							importedNumber: "01",
+							configuredNumber: "",
+						},
+					},
+				},
+				'Imported car number "01" does not match the configured number ("").',
 			],
 			[
-				{ reason: { case: "carNumberMismatch", value: {
-					owner: { case: "teamId", value: 3 }, importedNumber: "4",
-				} } },
-				'Imported car number "4" does not match the configured number for team #3 (unavailable).',
+				{
+					reason: {
+						case: "carNumberMismatch",
+						value: {
+							owner: { case: "teamId", value: 3 },
+							importedNumber: "4",
+						},
+					},
+				},
+				'Imported car number "4" does not match the configured number (unavailable).',
 			],
 			[{}, "No diagnostic reason provided."],
 		];
 		for (const [input, expected] of examples) {
-			expect(formatUnresolvedMappingReason(mapping(input))).toBe(expected);
+			expect(formatUnresolvedMappingReason(mapping(input))).toBe(
+				expected,
+			);
 		}
 	});
 
@@ -133,14 +181,36 @@ describe("unresolved mapping diagnostics", () => {
 
 	it("shows every diagnostic sorted by result index on load and after validation", async () => {
 		const diagnostics = [
-			mapping({ reason: { case: "teamDriversMissing",
-				value: { sourceTeamName: "Session" } } }),
-			mapping({ resultEntryId: 202, resultIndex: 2, reason: { case: "teamDriversMissing",
-				value: { sourceTeamName: "Second" } } }),
-			mapping({ resultEntryId: 200, resultIndex: 0, reason: { case: "teamDriversMissing",
-				value: { sourceTeamName: "First" } } }),
-			mapping({ resultEntryId: 201, resultIndex: 0, reason: { case: "teamDriversMissing",
-				value: { sourceTeamName: "Also first" } } }),
+			mapping({
+				reason: {
+					case: "teamDriversMissing",
+					value: { sourceTeamName: "Session" },
+				},
+			}),
+			mapping({
+				resultEntryId: 202,
+				resultIndex: 2,
+				reason: {
+					case: "teamDriversMissing",
+					value: { sourceTeamName: "Second" },
+				},
+			}),
+			mapping({
+				resultEntryId: 200,
+				resultIndex: 0,
+				reason: {
+					case: "teamDriversMissing",
+					value: { sourceTeamName: "First" },
+				},
+			}),
+			mapping({
+				resultEntryId: 201,
+				resultIndex: 0,
+				reason: {
+					case: "teamDriversMissing",
+					value: { sourceTeamName: "Also first" },
+				},
+			}),
 		];
 		vi.mocked(getPreprocessPreview).mockResolvedValue({
 			$typeName: "backend.import.v1.GetPreprocessPreviewResponse",
@@ -152,7 +222,9 @@ describe("unresolved mapping diagnostics", () => {
 			unresolvedMappings: diagnostics,
 		});
 		render(
-			<MemoryRouter initialEntries={["/seasons/1/events/2/races/3/grids/4"]}>
+			<MemoryRouter
+				initialEntries={["/seasons/1/events/2/races/3/grids/4"]}
+			>
 				<Routes>
 					<Route
 						path="/seasons/:seasonId/events/:eventId/races/:raceId/grids/:gridId"
@@ -168,7 +240,8 @@ describe("unresolved mapping diagnostics", () => {
 			const table = diagnostic.closest("table");
 			expect(table).not.toBeNull();
 			expect(
-				within(table!).getByRole("columnheader", { name: "Pos" }).textContent,
+				within(table!).getByRole("columnheader", { name: "Pos" })
+					.textContent,
 			).toBe("Pos");
 			expect(within(table!).queryByText("Source Value")).toBeNull();
 			const rows = within(table!).getAllByRole("row").slice(1);
@@ -184,7 +257,9 @@ describe("unresolved mapping diagnostics", () => {
 		await waitFor(() =>
 			expect(resolveMappings).toHaveBeenCalledWith({ gridId: 4 }),
 		);
-		await waitFor(() => expect(getPreprocessPreview).toHaveBeenCalledTimes(2));
+		await waitFor(() =>
+			expect(getPreprocessPreview).toHaveBeenCalledTimes(2),
+		);
 		await assertRows();
 	});
 });
