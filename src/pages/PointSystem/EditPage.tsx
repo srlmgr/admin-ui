@@ -33,6 +33,8 @@ const { Title, Text } = Typography;
 
 const AFFECTS_SKIP_CALC_TOOLTIP =
 	"If this is true, the points for this penalty will be substracted from the gained points. In general steward penalties should not affect the selection of a skip event so their setting is mostly false whereas race penalties such as Offtracks exceeded should reduce the points to be considered for a skip event";
+const APPLY_HEURISTIC_TOOLTIP =
+	"If this is true, the heuristic for offtrack penalties will be applied. It will try find hidden offtracks. In iRacing offtracks are reported only once per lap. So a total incident count of 3 and only one offtrack lap means there are 2 hidden offtracks. So a total of 3 offtracks will be set";
 
 type PointSystemFormValues = {
 	name: string;
@@ -76,6 +78,7 @@ type DraftOfftrackRule = {
 	perExceedancePenalty: number;
 	globalPenalty: number;
 	affectsSkipResult: boolean;
+	applyHeuristic: boolean;
 };
 
 type DraftPolicy = {
@@ -124,6 +127,7 @@ function emptyOfftrackRule(): DraftOfftrackRule {
 		perExceedancePenalty: 0,
 		globalPenalty: 0,
 		affectsSkipResult: true,
+		applyHeuristic: true,
 	};
 }
 
@@ -271,6 +275,8 @@ function raceSettingsToDraft(source: PointRaceSettings[]): DraftRaceSetting[] {
 													rule.globalPenalty,
 												affectsSkipResult:
 													rule.affectsSkipCalc,
+												applyHeuristic:
+													rule.applyHeuristic,
 											})),
 								stewardAffectsSkipResult: false,
 							};
@@ -369,6 +375,7 @@ function toPointRaceSettings(draft: DraftRaceSetting[]): PointRaceSettings[] {
 								perExceedancePenalty: rule.perExceedancePenalty,
 								globalPenalty: rule.globalPenalty,
 								affectsSkipCalc: rule.affectsSkipResult,
+								applyHeuristic: rule.applyHeuristic,
 							})),
 						},
 					},
@@ -871,6 +878,7 @@ export function PointSystemEditPage() {
 				| "perExceedancePenalty"
 				| "globalPenalty"
 				| "affectsSkipResult"
+				| "applyHeuristic"
 			>
 		>,
 	) => {
@@ -1409,6 +1417,35 @@ export function PointSystemEditPage() {
 																				Affects
 																				skip
 																				calculation
+																			</Checkbox>
+																		</Tooltip>
+																		<Tooltip
+																			title={
+																				APPLY_HEURISTIC_TOOLTIP
+																			}
+																		>
+																			<Checkbox
+																				checked={
+																					rule.applyHeuristic
+																				}
+																				onChange={(
+																					event,
+																				) =>
+																					updateOfftrackRule(
+																						setting.id,
+																						policy.id,
+																						rule.id,
+																						{
+																							applyHeuristic:
+																								event
+																									.target
+																									.checked,
+																						},
+																					)
+																				}
+																			>
+																				Apply
+																				heuristic
 																			</Checkbox>
 																		</Tooltip>
 																		<Button

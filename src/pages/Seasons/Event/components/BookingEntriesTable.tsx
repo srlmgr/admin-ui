@@ -17,6 +17,7 @@ type BookingEntriesTableProps = {
 	races?: Race[];
 	grids?: RaceGrid[];
 	refreshToken?: number;
+	onEntriesLoaded?: (entries: BookingEntry[]) => void;
 };
 
 type BookingTableRow = BookingEntry & {
@@ -94,6 +95,7 @@ export function BookingEntriesTable({
 	races = [],
 	grids = [],
 	refreshToken,
+	onEntriesLoaded,
 }: BookingEntriesTableProps) {
 	const scopeCase = scope.case;
 	const scopeValue = scope.value;
@@ -119,6 +121,7 @@ export function BookingEntriesTable({
 				setBookingEntries(response.items);
 				setDrivers(response.drivers);
 				setTeams(response.teams);
+				onEntriesLoaded?.(response.items);
 			} catch (error) {
 				if (!isCancelled) {
 					void message.error(
@@ -137,7 +140,7 @@ export function BookingEntriesTable({
 		return () => {
 			isCancelled = true;
 		};
-	}, [refreshToken, scopeCase, scopeValue]);
+	}, [onEntriesLoaded, refreshToken, scopeCase, scopeValue]);
 
 	const rows = useMemo(() => {
 		const driversById = new Map(
